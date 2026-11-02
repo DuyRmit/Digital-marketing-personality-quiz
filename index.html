@@ -148,8 +148,27 @@ legend{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)
 .invite{background:var(--mist);border-radius:22px;padding:20px}
 .invite h3{font-size:1.25rem}
 .invite p{margin-top:8px}
-.next-step{margin-top:14px;border:2px dashed var(--navy);border-radius:16px;padding:16px;background:#fff;font-weight:900;color:var(--navy)}
-.next-step span{display:block;height:44px;border-bottom:2px solid var(--line)}
+/* post + shared board */
+.next-step{display:block;margin-top:14px;font-weight:900;color:var(--navy);font-size:1.05rem}
+#stepText{display:block;width:100%;margin-top:8px;font:inherit;font-size:1rem;line-height:1.4;padding:14px 16px;border:2px dashed var(--navy);border-radius:16px;background:#fff;color:var(--text);resize:vertical;min-height:96px}
+#stepText:focus-visible{outline:4px solid var(--gold);outline-offset:2px;border-style:solid}
+.count{text-align:right;font-size:.85rem;color:#4a4a78;margin-top:4px}
+.err{color:#b00613;font-weight:700;min-height:1.2em}
+.posted{margin-top:14px;background:#fff;border-radius:16px;padding:14px 16px;border:2px solid var(--navy)}
+.demo{background:#fff6d1;border:1px solid var(--gold);border-radius:12px;padding:8px 12px}
+.board{column-width:240px;column-gap:14px;margin-top:20px}
+.pnote{break-inside:avoid;margin:0 0 14px;background:#fff;border:2px solid var(--line);border-radius:18px;overflow:hidden;position:relative}
+.pnote header{display:flex;align-items:center;gap:10px;background:var(--c);color:var(--ink);padding:10px 12px;font-weight:900}
+.pnote header em{margin-left:auto;font-style:normal;font-size:.8rem;background:rgba(255,255,255,.92);color:var(--navy);padding:2px 10px;border-radius:99px}
+.pn-ic{width:34px;height:34px;border-radius:50%;background:rgba(255,255,255,.92);display:grid;place-items:center;font-size:1.2rem;overflow:hidden;flex:none}
+.pn-ic img{width:100%;height:100%;object-fit:cover;display:block}
+.pnote p{padding:14px 14px 16px;font-size:1.02rem;line-height:1.4;overflow-wrap:anywhere}
+.pnote.mine{border-color:var(--navy);box-shadow:0 0 0 3px var(--gold)}
+.pnote .hide{position:absolute;right:8px;bottom:8px;font:inherit;font-size:.8rem;font-weight:700;border:1px solid #b00613;color:#b00613;background:#fff;border-radius:99px;padding:4px 12px;cursor:pointer}
+.empty{margin-top:20px;text-align:center;padding:36px 12px;background:var(--mist);border-radius:18px;font-weight:700;color:var(--navy)}
+.kiosk .shell{max-width:1500px}
+.kiosk .board{column-width:300px}
+.kiosk .pnote p{font-size:1.25rem}
 .save-row{display:flex;gap:10px;flex-wrap:wrap}
 
 .finish{text-align:left}
@@ -330,7 +349,7 @@ const QUESTIONS = [
    STATE — nothing is stored in the browser, so a refresh or
    "Play again" always starts clean for the next student.
    ========================================================= */
-const state = { screen:'welcome', answers:Array(QUESTIONS.length).fill(null), tied:[], tieChoice:null, winner:null };
+const state = { screen:'welcome', answers:Array(QUESTIONS.length).fill(null), tied:[], tieChoice:null, winner:null, draft:'', posted:null, boardFrom:'finish' };
 const LETTERS = ['A','B','C','D','E','F'];
 const stage = document.getElementById('stage');
 const progress = document.getElementById('progress');
@@ -353,7 +372,7 @@ function resetGame(){
   clearTimeout(calcTimer);
   state.screen = 'welcome';
   state.answers = Array(QUESTIONS.length).fill(null);
-  state.tied = []; state.tieChoice = null; state.winner = null;
+  state.tied = []; state.tieChoice = null; state.winner = null; state.draft = ''; state.posted = null; state.boardFrom = 'finish';
 }
 
 function go(screen){ state.screen = screen; render(); window.scrollTo({top:0}); }
@@ -389,6 +408,7 @@ function iconHTML(key){
 }
 
 function render(){
+  clearInterval(boardTimer);
   setAccent(null);
   renderProgress();
   const s = state.screen;
@@ -398,6 +418,7 @@ function render(){
   else if(s === 'tie') renderTie();
   else if(s === 'result') renderResult();
   else if(s === 'finish') renderFinish();
+  else if(s === 'board') renderBoard();
   animateIn();
 }
 
@@ -577,13 +598,11 @@ function renderResult(){
         <h3>Your superpower doesn’t stop here!</h3>
         <p>Save your persona and share your superpower with your friends!</p>
         <p style="margin-top:12px"><strong>Put your superpower into action.</strong> What is one thing you can do to put your marketing superpower and RMIT Value into practice in your studies, everyday life or future career? Write down one action you can take.</p>
-        <div class="next-step">My next step is to…<span></span></div>
-        <p class="note">Write it on a reflection card or sticky note and add it to the board at the booth.</p>
-        <div class="actions"><button class="btn" id="cont">Continue →</button></div>
+        ${postBlockHTML()}
       </div>
     </div>`;
   document.getElementById('save').onclick = savePersona;
-  document.getElementById('cont').onclick = () => go('finish');
+  wirePost();
   focusHeading();
 }
 
@@ -593,9 +612,155 @@ function renderFinish(){
       <div class="big" aria-hidden="true">${PERSONAS[state.winner].emoji}</div>
       <h2 data-focus>Thanks for playing!</h2>
       <p class="lead">Keep exploring, creating and making an impact with your superpower and RMIT Value!</p>
-      <div class="actions"><button class="btn" id="again">Play again ↻</button></div>
+      <div class="actions"><button class="btn" id="again">Play again ↻</button><button class="btn ghost" id="seeBoard">See the board</button></div>
     </div>`;
+  document.getElementById('seeBoard').onclick = () => openBoard('finish');
   document.getElementById('again').onclick = () => { resetGame(); render(); window.scrollTo({top:0}); };
+  focusHeading();
+}
+
+/* =========================================================
+   SHARED BOARD
+   Students post their "next step"; everyone sees the cards.
+   Needs the small Cloudflare Worker (board-worker.js). Until BOARD.endpoint
+   is set, the board runs in demo mode (posts only live on this device).
+   Open the page with #board for a big-screen booth display,
+   or #admin to get "Hide" buttons for moderation.
+   ========================================================= */
+const BOARD = {
+  endpoint:'',     // e.g. 'https://superpower-board.YOURNAME.workers.dev'
+  maxLen:140,
+  pollMs:8000
+};
+const demoPosts = [
+  {id:'d1', persona:'creator',     text:'Film one short video this week about something I care about.'},
+  {id:'d2', persona:'explorer',    text:'Try an AI tool I have never used and see what it can do.'},
+  {id:'d3', persona:'trust',       text:'Check that every claim in my next post is actually true.'},
+  {id:'d4', persona:'inclusive',   text:'Ask my classmates what kind of content they want to see.'}
+];
+const boardIsAdmin = location.hash === '#admin';
+let boardTimer = null, boardToken = null, boardSig = '';
+const seenIds = new Set();
+
+function esc(t){ return String(t).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+function textProblem(t){
+  const v = t.trim();
+  if(!v) return 'Write one action first.';
+  if(v.length > BOARD.maxLen) return `Keep it under ${BOARD.maxLen} characters.`;
+  if(/(https?:\/\/|www\.|\S+@\S+\.\S+|(\d[\s.\-]?){8,})/i.test(v)) return 'Please leave out links, emails and phone numbers.';
+  return '';
+}
+
+async function boardList(){
+  if(!BOARD.endpoint) return demoPosts.slice();
+  const r = await fetch(BOARD.endpoint + '/posts', {cache:'no-store'});
+  if(!r.ok) throw new Error('list failed');
+  return (await r.json()).posts || [];
+}
+async function boardPost(persona, text){
+  if(!BOARD.endpoint){
+    const post = {id:'local' + Date.now(), persona, text};
+    demoPosts.unshift(post); return post;
+  }
+  let r;
+  try{
+    r = await fetch(BOARD.endpoint + '/posts', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({persona, text})});
+  }catch(e){ throw new Error('Couldn’t reach the board. Check your connection and try again.'); }
+  const data = await r.json().catch(() => ({}));
+  if(!r.ok) throw new Error(data.error || 'Couldn’t post. Please try again.');
+  return data.post;
+}
+async function boardHide(id){
+  if(!BOARD.endpoint){ const i = demoPosts.findIndex(p => String(p.id) === String(id)); if(i > -1) demoPosts.splice(i,1); return; }
+  const r = await fetch(BOARD.endpoint + '/posts/' + encodeURIComponent(id), {method:'DELETE', headers:{Authorization:'Bearer ' + boardToken}});
+  if(!r.ok) throw new Error(r.status === 401 ? 'Wrong admin token.' : 'Could not hide that post.');
+}
+
+function postBlockHTML(){
+  if(state.posted) return `
+    <div class="posted"><p><strong>You’re on the board!</strong> “${esc(state.posted.text)}”</p></div>
+    <div class="actions"><button class="btn" id="seeboard">See the board →</button><button class="btn ghost" id="cont">Continue →</button></div>`;
+  return `
+    <label class="next-step" for="stepText">My next step is to…</label>
+    <textarea id="stepText" rows="3" maxlength="${BOARD.maxLen}" placeholder="Write one small, realistic action" autocomplete="off"></textarea>
+    <div class="count"><span id="cnt">0</span>/${BOARD.maxLen}</div>
+    <p class="note">Your post goes on a shared board that everyone at Experience Day can see. It shows your persona, not your name. Please leave out names, links and contact details. Prefer pen and paper? Write it on a card at the booth instead.</p>
+    <p class="note err" id="postMsg" role="status"></p>
+    <div class="actions"><button class="btn" id="post" disabled>Post to the board</button><button class="btn ghost" id="cont">Skip →</button></div>`;
+}
+function wirePost(){
+  document.getElementById('cont').onclick = () => go('finish');
+  const sb = document.getElementById('seeboard'); if(sb) sb.onclick = () => openBoard('result');
+  const ta = document.getElementById('stepText'); if(!ta) return;
+  const btn = document.getElementById('post'), cnt = document.getElementById('cnt'), msg = document.getElementById('postMsg');
+  ta.value = state.draft; cnt.textContent = ta.value.length; btn.disabled = !ta.value.trim();
+  ta.oninput = () => { state.draft = ta.value; cnt.textContent = ta.value.length; btn.disabled = !ta.value.trim(); msg.textContent = ''; };
+  btn.onclick = async () => {
+    const problem = textProblem(ta.value);
+    if(problem){ msg.textContent = problem; return; }
+    btn.disabled = true; msg.textContent = 'Posting…';
+    try{ state.posted = await boardPost(state.winner, ta.value.trim()); openBoard('result'); }
+    catch(e){ msg.textContent = e.message; btn.disabled = false; }
+  };
+}
+
+function openBoard(from){ state.boardFrom = from; go('board'); }
+
+function noteHTML(post, idx, isNew){
+  if(!PERSONAS[post.persona]) return '';
+  const p = PERSONAS[post.persona];
+  const mine = state.posted && String(state.posted.id) === String(post.id);
+  return `<article class="pnote${mine ? ' mine' : ''}${isNew ? ' in' : ''}" style="--c:${p.color};--ink:${p.ink};--i:${idx}">
+    <header><span class="pn-ic">${iconHTML(post.persona)}</span><b>${p.name}</b>${mine ? '<em>You</em>' : ''}</header>
+    <p>${esc(post.text)}</p>
+    ${boardIsAdmin ? `<button type="button" class="hide" data-id="${esc(post.id)}">Hide</button>` : ''}
+  </article>`;
+}
+
+async function refreshBoard(first){
+  let el = document.getElementById('board'); if(!el) return;
+  const msg = document.getElementById('boardMsg');
+  try{
+    const posts = await boardList();
+    el = document.getElementById('board'); if(!el) return;
+    const sig = posts.map(p => p.id).join(',');
+    if(sig !== boardSig || first){
+      boardSig = sig;
+      el.innerHTML = posts.length
+        ? posts.map((p,i) => noteHTML(p, Math.min(i,10), first ? true : !seenIds.has(String(p.id)))).join('')
+        : '<p class="empty">No posts yet. Be the first to share a next step!</p>';
+      posts.forEach(p => seenIds.add(String(p.id)));
+    }
+    msg.textContent = '';
+  }catch(e){
+    if(msg) msg.textContent = 'Couldn’t load the board. Trying again…';
+  }
+}
+
+function renderBoard(){
+  const kiosk = document.body.classList.contains('kiosk'), from = state.boardFrom;
+  boardSig = ''; seenIds.clear();
+  stage.innerHTML = `
+    <h2 data-focus>The superpower board</h2>
+    <p class="lead">One small next step from everyone at Experience Day.</p>
+    ${BOARD.endpoint ? '' : '<p class="note demo">Demo mode: posts are only visible on this device until the board is connected.</p>'}
+    <div class="board" id="board" aria-live="polite"></div>
+    <p class="note" id="boardMsg" role="status"></p>
+    ${kiosk ? '' : `<div class="actions"><button class="btn ghost" id="bback">← Back</button>${from === 'result' ? '<button class="btn grow" id="bnext">Continue →</button>' : ''}</div>`}`;
+  if(!kiosk){
+    document.getElementById('bback').onclick = () => go(from);
+    const nx = document.getElementById('bnext'); if(nx) nx.onclick = () => go('finish');
+  }
+  document.getElementById('board').addEventListener('click', async ev => {
+    const b = ev.target.closest('.hide'); if(!b) return;
+    if(!BOARD.endpoint || boardToken === null) boardToken = BOARD.endpoint ? (window.prompt('Admin token') || null) : 'demo';
+    if(!boardToken) return;
+    try{ await boardHide(b.dataset.id); boardSig = ''; refreshBoard(false); }
+    catch(e){ alert(e.message); boardToken = null; }
+  });
+  refreshBoard(true);
+  boardTimer = setInterval(() => refreshBoard(false), BOARD.pollMs);
   focusHeading();
 }
 
@@ -687,6 +852,10 @@ async function savePersona(){
   btn.disabled = false;
 }
 
+if(location.hash === '#board' || location.hash === '#admin'){
+  document.body.classList.add('kiosk');
+  state.screen = 'board';
+}
 render();
 </script>
 </body>
