@@ -1,0 +1,693 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>What’s your digital marketing superpower?</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Lato:wght@400;700;900&display=swap" rel="stylesheet">
+<style>
+:root{
+  --navy:#000054; --navy-2:#0d0d6b; --red:#E61E2A; --gold:#FAC800;
+  --paper:#ffffff; --mist:#eef0fb; --line:#c9cdee; --text:#12123a;
+  --accent:#E61E2A; --accent-ink:#ffffff;
+  --radius:18px;
+  --font:'Lato',system-ui,-apple-system,'Segoe UI',Roboto,Arial,sans-serif;
+}
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%}
+body{
+  font-family:var(--font); color:var(--text); background:#f1f2fb;
+  line-height:1.5; -webkit-text-size-adjust:100%;
+  padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+}
+.shell{max-width:960px;margin:0 auto;padding:20px 16px 40px;min-height:100vh;display:flex;flex-direction:column}
+.topbar{display:flex;align-items:center;justify-content:space-between;gap:12px;color:var(--navy);padding:4px 2px 16px}
+.brand{font-weight:900;font-size:.95rem;letter-spacing:.01em}
+.brand span{color:var(--red)}
+.progress{display:flex;gap:2px;align-items:center}
+.pstep{display:block;border:0;background:none;padding:12px 3px;margin:0;font:inherit}
+.pstep i{width:26px;height:6px;border-radius:99px;background:var(--line);display:block;transition:background .2s}
+.pstep.done i{background:var(--navy)}
+.pstep.now i{background:var(--red)}
+button.pstep{cursor:pointer}
+button.pstep:hover i{background:var(--red)}
+button.pstep:focus-visible{outline:3px solid var(--navy);outline-offset:1px;border-radius:8px}
+.progress[hidden]{display:none}
+main{flex:1;display:flex}
+.card{
+  background:var(--paper);border-radius:28px;padding:24px 20px 28px;width:100%;
+  border:1px solid var(--line);box-shadow:0 12px 36px rgba(0,0,0,.08);align-self:flex-start;--cardpad:20px;
+}
+h1,h2,h3{margin:0;line-height:1.1;color:var(--navy)}
+h1{font-size:clamp(2rem,7vw,3.6rem);font-weight:900;letter-spacing:-.02em}
+h2{font-size:clamp(1.5rem,4.6vw,2.2rem);font-weight:900;letter-spacing:-.01em}
+h1:focus,h2:focus{outline:none}
+p{margin:0}
+.lead{font-size:1.1rem;margin-top:14px;max-width:46ch}
+.note{font-size:.95rem;color:#4a4a78;margin-top:10px;max-width:50ch}
+.kicker{display:inline-block;background:var(--mist);color:var(--navy);font-weight:700;font-size:.9rem;padding:5px 12px;border-radius:99px;margin-bottom:14px}
+.scenario{font-size:1.15rem;margin-top:10px;max-width:50ch}
+
+/* welcome */
+.welcome{display:grid;gap:22px;grid-template-areas:"intro" "cards" "go"}
+.w-intro{grid-area:intro}
+.w-go{grid-area:go}
+.w-go .note{margin-top:0}
+.w-go .actions{margin-top:14px}
+/* persona gallery: swipe on phones, 2x3 grid on laptops */
+.pwrap{grid-area:cards;min-width:0}
+.pgrid{
+  display:flex;gap:12px;overflow-x:auto;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;
+  margin:0 calc(var(--cardpad) * -1);padding:8px var(--cardpad) 16px;scroll-padding-inline:var(--cardpad);
+  list-style:none;scrollbar-width:none;overscroll-behavior-x:contain;
+}
+.pgrid::-webkit-scrollbar{display:none}
+.pgrid:focus-visible{outline:4px solid var(--gold);outline-offset:-4px;border-radius:20px}
+.pcard{
+  flex:0 0 78%;max-width:300px;scroll-snap-align:start;
+  background:var(--c);color:var(--ink);border-radius:26px;padding:24px 18px 26px;
+  display:flex;flex-direction:column;align-items:center;text-align:center;gap:12px;
+  transition:transform .35s cubic-bezier(.2,.7,.2,1);
+}
+.pcard:not(.is-active){transform:scale(.93)}
+.pcard .pic{width:110px;height:110px;border-radius:50%;background:rgba(255,255,255,.92);display:grid;place-items:center;font-size:3.6rem;overflow:hidden;flex:none}
+.pcard .pic img{width:100%;height:100%;object-fit:cover;display:block}
+.pcard h3{color:inherit;font-size:1.35rem;font-weight:900;line-height:1.15}
+.pcard p{font-size:.98rem;line-height:1.4}
+.pdots{display:flex;justify-content:center;gap:8px;margin-top:2px}
+.pdots span{width:8px;height:8px;border-radius:99px;background:var(--line);transition:width .3s, background .3s}
+.pdots span.on{width:26px;background:var(--navy)}
+.swipe-hint{text-align:center;font-size:.9rem;color:#4a4a78;margin-top:8px}
+
+/* entrance motion */
+@keyframes rise{from{opacity:0;translate:0 20px}to{opacity:1;translate:0 0}}
+@keyframes pop{0%{transform:scale(.4);opacity:0}70%{transform:scale(1.08);opacity:1}100%{transform:scale(1)}}
+@keyframes tick{0%{transform:scale(.7)}60%{transform:scale(1.18)}100%{transform:scale(1)}}
+.in{animation:rise .6s cubic-bezier(.2,.7,.2,1) backwards;animation-delay:calc(var(--i,0) * 70ms)}
+.hero .badge{animation:pop .75s cubic-bezier(.3,1.4,.5,1) .3s backwards}
+.opt input:checked + label .letter{animation:tick .3s ease-out}
+
+/* answers */
+fieldset{border:0;margin:20px 0 0;padding:0;min-width:0}
+legend{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+.opts{display:grid;gap:10px}
+.opt{position:relative}
+.opt input{position:absolute;opacity:0;inset:0;width:100%;height:100%;margin:0;cursor:pointer;z-index:2}
+.opt label{
+  display:flex;align-items:center;gap:14px;min-height:60px;padding:12px 16px 12px 12px;
+  border:2px solid var(--line);border-radius:var(--radius);background:#fff;font-size:1.05rem;font-weight:700;color:var(--navy);
+  transition:border-color .15s, background .15s, transform .15s;
+}
+.opt .letter{flex:none;width:38px;height:38px;border-radius:12px;background:var(--mist);display:grid;place-items:center;font-weight:900;color:var(--navy)}
+.opt input:hover + label{border-color:var(--navy)}
+.opt input:checked + label{border-color:var(--navy);background:var(--navy);color:#fff}
+.opt input:checked + label .letter{background:var(--gold);color:var(--navy)}
+.opt input:checked + label::after{content:"✓";margin-left:auto;font-weight:900;color:var(--gold);font-size:1.3rem}
+.opt input:focus-visible + label{outline:4px solid var(--gold);outline-offset:2px;box-shadow:0 0 0 2px var(--navy)}
+
+/* buttons */
+.actions{display:flex;gap:10px;margin-top:24px;flex-wrap:wrap}
+.btn{
+  font:inherit;font-weight:900;font-size:1.05rem;border:0;border-radius:99px;padding:15px 28px;min-height:52px;cursor:pointer;
+  background:var(--red);color:#fff;transition:transform .12s, background .15s;
+}
+.btn:hover:not(:disabled){transform:translateY(-1px);background:#c8101c}
+.btn:focus-visible{outline:4px solid var(--gold);outline-offset:3px}
+.btn:disabled{background:#d6d8ee;color:#7b7ca8;cursor:not-allowed}
+.btn.ghost{background:transparent;color:var(--navy);box-shadow:inset 0 0 0 2px var(--navy)}
+.btn.ghost:hover:not(:disabled){background:var(--mist)}
+.btn.gold{background:var(--gold);color:var(--navy)}
+.btn.gold:hover:not(:disabled){background:#e6b800}
+.actions .grow{flex:1 1 220px}
+
+/* calc */
+.calc{text-align:center;padding:48px 8px}
+.spinner{width:56px;height:56px;border-radius:50%;border:6px solid var(--mist);border-top-color:var(--red);margin:0 auto 22px;animation:spin 1s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* result */
+.reveal{display:grid;gap:22px}
+.hero{
+  background:var(--accent);color:var(--accent-ink);border-radius:24px;padding:26px 20px;
+  display:grid;gap:18px;justify-items:center;text-align:center;
+}
+.badge{
+  width:min(220px,56vw);aspect-ratio:1;border-radius:50%;background:rgba(255,255,255,.92);
+  display:grid;place-items:center;font-size:clamp(4.5rem,22vw,7.5rem);overflow:hidden;
+  box-shadow:0 10px 30px rgba(0,0,0,.2);
+}
+.badge img{width:100%;height:100%;object-fit:cover;display:block}
+.hero h2{color:inherit;font-size:clamp(2.2rem,9vw,3.6rem)}
+.value{display:inline-block;margin-top:10px;font-weight:900;font-size:1.05rem;background:rgba(255,255,255,.92);color:var(--navy);padding:6px 16px;border-radius:99px}
+.power{font-size:1.3rem;font-weight:700;max-width:30ch;line-height:1.3}
+.action-box h3{font-size:1.3rem}
+.action-box p{margin-top:8px}
+.action-box .ask{font-weight:700;color:var(--navy)}
+.invite{background:var(--mist);border-radius:22px;padding:20px}
+.invite h3{font-size:1.25rem}
+.invite p{margin-top:8px}
+.next-step{margin-top:14px;border:2px dashed var(--navy);border-radius:16px;padding:16px;background:#fff;font-weight:900;color:var(--navy)}
+.next-step span{display:block;height:44px;border-bottom:2px solid var(--line)}
+.save-row{display:flex;gap:10px;flex-wrap:wrap}
+
+.finish{text-align:left}
+.finish .big{font-size:4rem;line-height:1;margin-bottom:12px}
+
+/* desktop */
+@media (min-width:820px){
+  .shell{padding:28px 32px 56px}
+  .card{padding:44px 52px 48px}
+  .opts{grid-template-columns:1fr 1fr;gap:12px}
+  .opt label{min-height:76px}
+  .hero{grid-template-columns:240px 1fr;text-align:left;justify-items:start;align-items:center;padding:32px 36px;gap:32px}
+  .badge{width:240px}
+  .reveal{grid-template-columns:1fr 1fr;align-items:start}
+  .reveal .hero{grid-column:1 / -1}
+  .tie .opts{grid-template-columns:1fr 1fr}
+  .welcome{grid-template-columns:minmax(0,1fr) minmax(0,1.25fr);grid-template-areas:"intro cards" "go cards";grid-template-rows:auto 1fr;column-gap:44px;align-items:start}
+  .w-go{align-self:end}
+  .pgrid{display:grid;grid-template-columns:1fr 1fr;gap:14px;overflow:visible;margin:0;padding:0;scroll-snap-type:none}
+  .pcard{flex:none;max-width:none;padding:20px 18px 22px;gap:10px}
+  .pcard:not(.is-active){transform:none}
+  .pcard .pic{width:96px;height:96px;font-size:3.2rem}
+  .pcard h3{font-size:1.2rem}
+  .pcard p{font-size:.92rem}
+  .pdots,.swipe-hint{display:none}
+}
+@media (max-width:380px){
+  .progress i{width:18px}
+  .card{padding:20px 14px 24px;--cardpad:14px}
+}
+@media (prefers-reduced-motion:reduce){
+  *{transition:none!important}
+  .in,.hero .badge,.opt input:checked + label .letter{animation:none!important}
+  .pgrid{scroll-behavior:auto}
+  .spinner{animation-duration:3s}
+}
+</style>
+</head>
+<body>
+<div class="shell">
+  <div class="topbar">
+    <div class="brand">RMIT <span>Digital Marketing</span></div>
+    <div class="progress" id="progress" hidden aria-label="Quiz progress"></div>
+  </div>
+  <main><section class="card" id="stage" aria-live="polite"></section></main>
+</div>
+
+<script>
+/* =========================================================
+   CONFIG — edit copy, personas and images here
+   ========================================================= */
+
+/* Persona assets: when the final icons are ready, set `image` to a file path or URL
+   (e.g. 'img/creator.png'). Until then the emoji is used as a placeholder.
+   Icons are also drawn onto the downloadable result card. */
+const PERSONAS = {
+  creator:{
+    name:'Creator', emoji:'✨', image:'', value:'Imagination',
+    power:'Turn imaginative ideas into shareable stories.',
+    blurb:'You turn bold ideas into eye-catching stories, videos and trends that people love to watch, share and talk about.',
+    head:'Ready to bring your ideas to life?',
+    desc:'You have the power to turn a fresh idea into creative content that captures attention and gets people talking.',
+    ask:'What’s one idea you could turn into something people will want to share?',
+    color:'#E61E2A', ink:'#ffffff'
+  },
+  inclusive:{
+    name:'Inclusive Marketer', emoji:'🤝', image:'', value:'Inclusion',
+    power:'Connect different voices and build welcoming communities.',
+    blurb:'You bring people together, listen to different voices and build online communities where everyone feels welcome, seen and heard.',
+    head:'Ready to make everyone feel included?',
+    desc:'You can create campaigns that welcome different perspectives and help more people feel seen and heard.',
+    ask:'How could you make your next project more inclusive?',
+    color:'#0E7C5A', ink:'#ffffff'
+  },
+  trust:{
+    name:'Trust Builder', emoji:'🔒', image:'', value:'Integrity',
+    power:'Earn trust through honesty and transparency.',
+    blurb:'You communicate honestly and openly, earning audience loyalty and helping people make choices they feel confident about.',
+    head:'Ready to build trust?',
+    desc:'You can create stronger relationships by communicating honestly and helping people make informed choices.',
+    ask:'How could you make your next message more transparent?',
+    color:'#2F5DFF', ink:'#ffffff'
+  },
+  explorer:{
+    name:'Explorer', emoji:'🚀', image:'', value:'Courage',
+    power:'Experiment with new ideas and digital tools.',
+    blurb:'You love testing new ideas, AI and digital tools, and you’re not afraid to try something no one has done.',
+    head:'Ready to try something new?',
+    desc:'You can explore emerging tools, test bold ideas and discover new ways to connect with audiences.',
+    ask:'What new tool or idea could you experiment with this week?',
+    color:'#7B3FE4', ink:'#ffffff'
+  },
+  strategist:{
+    name:'Strategist', emoji:'🧠', image:'', value:'Passion',
+    power:'Pursue marketing goals with research and planning.',
+    blurb:'You dig into data and audience insights, then use research and smart planning to hit your campaign goals.',
+    head:'Ready to turn insight into action?',
+    desc:'You can use research and data to make smarter decisions and build a plan that works towards a clear goal.',
+    ask:'What would you want to learn about your audience before launching a campaign?',
+    color:'#00B8D9', ink:'#000054'
+  },
+  changemaker:{
+    name:'Changemaker', emoji:'⚡', image:'', value:'Impact',
+    power:'Turn insight into meaningful, measurable results.',
+    blurb:'You use marketing to tackle real-world challenges, aiming for campaigns that create positive change and results you can measure.',
+    head:'Ready to make a difference?',
+    desc:'You can use marketing to address real-world challenges and create positive change.',
+    ask:'What is one issue you could help tackle through a digital campaign?',
+    color:'#FAC800', ink:'#000054'
+  }
+};
+
+/* Each option is [student-facing text, persona key]. Options are shown as A–F in this order. */
+const QUESTIONS = [
+  { title:'Your marketing superpower',
+    text:'A brand gives you one day to create something amazing. What would you do first?',
+    options:[
+      ['Create an eye-catching TikTok video.','creator'],
+      ['Study what customers really want.','strategist'],
+      ['Start a conversation with the online community.','inclusive'],
+      ['Try a completely new digital tool.','explorer'],
+      ['Make sure the brand’s message is honest.','trust'],
+      ['Find a way to make a positive difference.','changemaker']
+    ]},
+  { title:'Campaign challenge',
+    text:'Your brand’s TikTok campaign isn’t getting attention. What’s your next move?',
+    options:[
+      ['Ask followers what content they enjoy.','inclusive'],
+      ['Experiment with an unusual campaign idea.','explorer'],
+      ['Create a fun new video trend.','creator'],
+      ['Set a clear goal and improve the results.','changemaker'],
+      ['Check the views, clicks and engagement data.','strategist'],
+      ['Check whether the message feels authentic.','trust']
+    ]},
+  { title:'Product launch',
+    text:'You are launching a new product for Gen Z. What excites you most?',
+    options:[
+      ['Making sure the product promises are truthful.','trust'],
+      ['Designing the visuals and storytelling.','creator'],
+      ['Creating a product launch with real social impact.','changemaker'],
+      ['Building a community around the product.','inclusive'],
+      ['Planning how to reach the right audience.','strategist'],
+      ['Testing AI or interactive experiences.','explorer']
+    ]},
+  { title:'Online reputation',
+    text:'A brand receives negative comments online. What would you do?',
+    options:[
+      ['Explore a new way to solve the problem.','explorer'],
+      ['Listen to customers and make everyone feel heard.','inclusive'],
+      ['Make changes that improve customer experience.','changemaker'],
+      ['Investigate the cause and plan a solution.','strategist'],
+      ['Create a thoughtful response video.','creator'],
+      ['Respond openly and honestly.','trust']
+    ]},
+  { title:'Your dream job',
+    text:'You join a digital marketing team. Which role sounds most exciting?',
+    options:[
+      ['Marketing impact and growth specialist.','changemaker'],
+      ['Content creator and storyteller.','creator'],
+      ['Brand trust and reputation specialist.','trust'],
+      ['Digital innovation specialist.','explorer'],
+      ['Social media community manager.','inclusive'],
+      ['Campaign planner and data analyst.','strategist']
+    ]},
+  { title:'Success moment',
+    text:'Your campaign is a huge success! What makes you most proud?',
+    options:[
+      ['Customers genuinely trust our brand.','trust'],
+      ['My campaign made a measurable difference.','changemaker'],
+      ['I brought people together.','inclusive'],
+      ['I introduced an exciting new idea.','explorer'],
+      ['My strategy worked exactly as planned.','strategist'],
+      ['People love and share my creative content.','creator']
+    ]}
+];
+
+/* =========================================================
+   STATE — nothing is stored in the browser, so a refresh or
+   "Play again" always starts clean for the next student.
+   ========================================================= */
+const state = { screen:'welcome', answers:Array(QUESTIONS.length).fill(null), tied:[], tieChoice:null, winner:null };
+const LETTERS = ['A','B','C','D','E','F'];
+const stage = document.getElementById('stage');
+const progress = document.getElementById('progress');
+const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+let calcTimer = null;
+
+/* Scores are recalculated from the current answers every time,
+   so changing an answer can never award a duplicate point. */
+function getScores(){
+  const s = Object.fromEntries(Object.keys(PERSONAS).map(k => [k,0]));
+  state.answers.forEach((a,i) => { if(a !== null) s[QUESTIONS[i].options[a][1]]++; });
+  return s;
+}
+function topPersonas(){
+  const s = getScores(), max = Math.max(...Object.values(s));
+  return Object.keys(s).filter(k => s[k] === max);
+}
+
+function resetGame(){
+  clearTimeout(calcTimer);
+  state.screen = 'welcome';
+  state.answers = Array(QUESTIONS.length).fill(null);
+  state.tied = []; state.tieChoice = null; state.winner = null;
+}
+
+function go(screen){ state.screen = screen; render(); window.scrollTo({top:0}); }
+
+/* =========================================================
+   RENDER
+   ========================================================= */
+function setAccent(key){
+  const r = document.documentElement.style;
+  if(key){ r.setProperty('--accent', PERSONAS[key].color); r.setProperty('--accent-ink', PERSONAS[key].ink); }
+  else { r.removeProperty('--accent'); r.removeProperty('--accent-ink'); }
+}
+
+function renderProgress(){
+  const n = typeof state.screen === 'number' ? state.screen : null;
+  if(n === null){ progress.hidden = true; return; }
+  progress.hidden = false;
+  progress.setAttribute('aria-label', `Question ${n+1} of ${QUESTIONS.length}`);
+  /* answered questions (and the current one) can be revisited by tapping their bar */
+  progress.innerHTML = QUESTIONS.map((_,i) => {
+    const cls = 'pstep ' + (i<n ? 'done' : i===n ? 'now' : '');
+    const clickable = i !== n && state.answers[i] !== null;
+    return clickable
+      ? `<button type="button" class="${cls}" data-i="${i}" aria-label="Go back to question ${i+1}"><i></i></button>`
+      : `<span class="${cls}" ${i===n?'aria-current="step"':''}><i></i></span>`;
+  }).join('');
+  progress.querySelectorAll('button').forEach(b => { b.onclick = () => go(Number(b.dataset.i)); });
+}
+
+function iconHTML(key){
+  const p = PERSONAS[key];
+  return p.image ? `<img src="${p.image}" alt="">` : `<span aria-hidden="true">${p.emoji}</span>`;
+}
+
+function render(){
+  setAccent(null);
+  renderProgress();
+  const s = state.screen;
+  if(s === 'welcome') renderWelcome();
+  else if(typeof s === 'number') renderQuestion(s);
+  else if(s === 'calc') renderCalc();
+  else if(s === 'tie') renderTie();
+  else if(s === 'result') renderResult();
+  else if(s === 'finish') renderFinish();
+  animateIn();
+}
+
+function focusHeading(){
+  const h = stage.querySelector('[data-focus]');
+  if(h){ h.setAttribute('tabindex','-1'); h.focus({preventScroll:true}); }
+}
+
+function renderWelcome(){
+  stage.innerHTML = `
+    <div class="welcome">
+      <div class="w-intro">
+        <h1 data-focus>What’s your digital marketing superpower?</h1>
+        <p class="lead">Discover your digital marketing strengths through six quick questions and reveal your persona.</p>
+      </div>
+      <div class="pwrap">
+      <ul class="pgrid" tabindex="0" aria-label="The six digital marketing personas">
+        ${Object.keys(PERSONAS).map((k,n) => { const p = PERSONAS[k]; return `
+          <li class="pcard${n===0?' is-active':''}" style="--c:${p.color};--ink:${p.ink}">
+            <div class="pic">${iconHTML(k)}</div>
+            <h3>${p.name}</h3>
+            <p>${p.blurb}</p>
+          </li>`; }).join('')}
+      </ul>
+      <div class="pdots" aria-hidden="true">${Object.keys(PERSONAS).map((_,n) => `<span class="${n===0?'on':''}"></span>`).join('')}</div>
+      <p class="swipe-hint" aria-hidden="true">Swipe to meet the six personas</p>
+      </div>
+      <div class="w-go">
+        <p class="note">This is a fun discovery game, not a psychological or personality assessment. There are no right or wrong answers.</p>
+        <div class="actions"><button class="btn" id="start">Discover my superpower →</button></div>
+      </div>
+    </div>`;
+  document.getElementById('start').onclick = () => go(0);
+  initGallery();
+  focusHeading();
+}
+
+/* highlights the card in view and syncs the dots while swiping */
+function initGallery(){
+  const g = stage.querySelector('.pgrid'); if(!g) return;
+  const cards = [...g.children], dots = [...stage.querySelectorAll('.pdots span')];
+  let raf;
+  const update = () => {
+    if(getComputedStyle(g).display !== 'flex') return;
+    const step = cards[1].offsetLeft - cards[0].offsetLeft;
+    let i = Math.round(g.scrollLeft / step);
+    if(g.scrollLeft + g.clientWidth >= g.scrollWidth - 4) i = cards.length - 1;
+    i = Math.max(0, Math.min(cards.length - 1, i));
+    cards.forEach((c,n) => c.classList.toggle('is-active', n === i));
+    dots.forEach((d,n) => d.classList.toggle('on', n === i));
+  };
+  g.addEventListener('scroll', () => { cancelAnimationFrame(raf); raf = requestAnimationFrame(update); }, {passive:true});
+  update();
+}
+
+/* staggered entrance for whatever the current screen contains */
+const ANIM_SEL = '.w-intro h1,.w-intro .lead,.pcard,.pdots,.swipe-hint,.w-go .note,.w-go .actions,.kicker,h2,.scenario,.opt,.lead,.actions,.hero,.action-box,.invite,.spinner,.big';
+function animateIn(){
+  const all = [...stage.querySelectorAll(ANIM_SEL)];
+  const els = all.filter(e => !all.some(o => o !== e && o.contains(e)));
+  /* answer options count as one step, so they all appear together instead of one by one */
+  let step = 0, optStep = null;
+  els.forEach(e => {
+    let i;
+    if(e.classList.contains('opt')){ if(optStep === null) optStep = step++; i = optStep; }
+    else i = step++;
+    e.style.setProperty('--i', Math.min(i, 10));
+    e.classList.add('in');
+  });
+}
+
+function renderQuestion(i){
+  const q = QUESTIONS[i], picked = state.answers[i];
+  const last = i === QUESTIONS.length - 1;
+  stage.innerHTML = `
+    <span class="kicker">Question ${i+1} of ${QUESTIONS.length}</span>
+    <h2 data-focus>${q.title}</h2>
+    <p class="scenario">${q.text}</p>
+    <fieldset>
+      <legend>${q.text}</legend>
+      <div class="opts">
+        ${q.options.map((o,idx) => `
+          <div class="opt">
+            <input type="radio" name="q${i}" id="q${i}o${idx}" value="${idx}" ${picked===idx?'checked':''}>
+            <label for="q${i}o${idx}"><span class="letter" aria-hidden="true">${LETTERS[idx]}</span><span>${o[0]}</span></label>
+          </div>`).join('')}
+      </div>
+    </fieldset>
+    <div class="actions">
+      <button class="btn ghost" id="back">← Back</button>
+      <button class="btn grow" id="next" ${picked===null?'disabled':''}>${last?'See my superpower →':'Next →'}</button>
+    </div>`;
+  const next = document.getElementById('next');
+  stage.querySelectorAll('input[type=radio]').forEach(inp => {
+    inp.onchange = () => { state.answers[i] = Number(inp.value); next.disabled = false; };
+  });
+  document.getElementById('back').onclick = () => go(i === 0 ? 'welcome' : i-1);
+  next.onclick = () => { if(state.answers[i] === null) return; last ? finishQuiz() : go(i+1); };
+  focusHeading();
+}
+
+function finishQuiz(){
+  state.tieChoice = null;
+  go('calc');
+}
+
+function renderCalc(){
+  stage.innerHTML = `
+    <div class="calc">
+      <div class="spinner" aria-hidden="true"></div>
+      <h2 data-focus>Almost there!</h2>
+      <p class="lead" style="margin-inline:auto">Your superpower is being revealed…</p>
+    </div>`;
+  focusHeading();
+  calcTimer = setTimeout(() => {
+    const top = topPersonas();
+    if(top.length > 1){ state.tied = top; go('tie'); }
+    else { state.winner = top[0]; go('result'); }
+  }, reduceMotion ? 400 : 1600);
+}
+
+function renderTie(){
+  stage.innerHTML = `
+    <div class="tie">
+      <h2 data-focus>You’ve got more than one superpower!</h2>
+      <p class="lead">Your answers show a tie. Which of these strengths feels more like you?</p>
+      <fieldset>
+        <legend>Choose one of the leading personas</legend>
+        <div class="opts">
+          ${state.tied.map(k => `
+            <div class="opt">
+              <input type="radio" name="tie" id="tie-${k}" value="${k}" ${state.tieChoice===k?'checked':''}>
+              <label for="tie-${k}"><span class="letter" aria-hidden="true">${PERSONAS[k].emoji}</span><span>${PERSONAS[k].name}<br><small style="font-weight:400">${PERSONAS[k].power}</small></span></label>
+            </div>`).join('')}
+        </div>
+      </fieldset>
+      <div class="actions">
+        <button class="btn ghost" id="back">← Back</button>
+        <button class="btn grow" id="reveal" ${state.tieChoice?'':'disabled'}>Reveal my superpower →</button>
+      </div>
+    </div>`;
+  const btn = document.getElementById('reveal');
+  stage.querySelectorAll('input[name=tie]').forEach(inp => {
+    inp.onchange = () => { state.tieChoice = inp.value; btn.disabled = false; };
+  });
+  document.getElementById('back').onclick = () => go(QUESTIONS.length - 1);
+  btn.onclick = () => { if(!state.tieChoice) return; state.winner = state.tieChoice; go('result'); };
+  focusHeading();
+}
+
+function renderResult(){
+  const k = state.winner, p = PERSONAS[k];
+  setAccent(k);
+  stage.innerHTML = `
+    <div class="reveal">
+      <div class="hero">
+        <div class="badge">${iconHTML(k)}</div>
+        <div>
+          <p style="font-weight:700">Your digital marketing persona is…</p>
+          <h2 data-focus>${p.name}</h2>
+          <span class="value">RMIT Value: ${p.value}</span>
+          <p class="power" style="margin-top:14px">${p.power}</p>
+        </div>
+      </div>
+
+      <div class="action-box">
+        <h3>${p.head}</h3>
+        <p>${p.desc}</p>
+        <p class="ask">${p.ask}</p>
+        <div class="save-row actions">
+          <button class="btn gold" id="save">Save my persona</button>
+        </div>
+        <p class="note" id="saveMsg" role="status"></p>
+      </div>
+
+      <div class="invite" style="grid-column:1 / -1">
+        <h3>Your superpower doesn’t stop here!</h3>
+        <p>Save your persona and share your superpower with your friends!</p>
+        <p style="margin-top:12px"><strong>Put your superpower into action.</strong> What is one thing you can do to put your marketing superpower and RMIT Value into practice in your studies, everyday life or future career? Write down one action you can take.</p>
+        <div class="next-step">My next step is to…<span></span></div>
+        <p class="note">Write it on a reflection card or sticky note and add it to the board at the booth.</p>
+        <div class="actions"><button class="btn" id="cont">Continue →</button></div>
+      </div>
+    </div>`;
+  document.getElementById('save').onclick = savePersona;
+  document.getElementById('cont').onclick = () => go('finish');
+  focusHeading();
+}
+
+function renderFinish(){
+  stage.innerHTML = `
+    <div class="finish">
+      <div class="big" aria-hidden="true">${PERSONAS[state.winner].emoji}</div>
+      <h2 data-focus>Thanks for playing!</h2>
+      <p class="lead">Keep exploring, creating and making an impact with your superpower and RMIT Value!</p>
+      <div class="actions"><button class="btn" id="again">Play again ↻</button></div>
+    </div>`;
+  document.getElementById('again').onclick = () => { resetGame(); render(); window.scrollTo({top:0}); };
+  focusHeading();
+}
+
+/* =========================================================
+   SAVE PERSONA AS IMAGE (drawn on a canvas, no libraries)
+   ========================================================= */
+function wrapText(ctx, text, x, y, maxW, lh){
+  const words = text.split(' '); let line = '';
+  for(const w of words){
+    const test = line ? line + ' ' + w : w;
+    if(ctx.measureText(test).width > maxW && line){ ctx.fillText(line, x, y); line = w; y += lh; }
+    else line = test;
+  }
+  if(line){ ctx.fillText(line, x, y); y += lh; }
+  return y;
+}
+function loadImg(src){
+  return new Promise(res => { const im = new Image(); im.crossOrigin = 'anonymous'; im.onload = () => res(im); im.onerror = () => res(null); im.src = src; });
+}
+
+async function buildCard(key){
+  const p = PERSONAS[key], W = 1080, H = 1350;
+  try{ await Promise.all([document.fonts.load('900 60px Lato'), document.fonts.load('700 40px Lato')]); }catch(e){}
+  const c = document.createElement('canvas'); c.width = W; c.height = H;
+  const ctx = c.getContext('2d');
+  const F = 'Lato, system-ui, Arial, sans-serif';
+
+  ctx.fillStyle = '#000054'; ctx.fillRect(0,0,W,H);
+  ctx.fillStyle = p.color; ctx.beginPath(); ctx.roundRect(60,60,W-120,H-120,56); ctx.fill();
+
+  ctx.textAlign = 'center';
+  ctx.fillStyle = p.ink; ctx.font = `700 38px ${F}`;
+  ctx.fillText('My digital marketing persona is…', W/2, 150);
+
+  // icon circle
+  const cx = W/2, cy = 430, r = 200;
+  ctx.fillStyle = 'rgba(255,255,255,.93)'; ctx.beginPath(); ctx.arc(cx,cy,r,0,Math.PI*2); ctx.fill();
+  let drawn = false;
+  if(p.image){
+    const im = await loadImg(p.image);
+    if(im){ ctx.save(); ctx.beginPath(); ctx.arc(cx,cy,r,0,Math.PI*2); ctx.clip(); ctx.drawImage(im, cx-r, cy-r, r*2, r*2); ctx.restore(); drawn = true; }
+  }
+  if(!drawn){
+    ctx.font = `220px "Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif`;
+    ctx.textBaseline = 'middle'; ctx.fillStyle = '#000'; ctx.fillText(p.emoji, cx, cy+14); ctx.textBaseline = 'alphabetic';
+  }
+
+  ctx.fillStyle = p.ink; ctx.font = `900 108px ${F}`;
+  let nameSize = 108;
+  while(ctx.measureText(p.name).width > W-220 && nameSize > 60){ nameSize -= 4; ctx.font = `900 ${nameSize}px ${F}`; }
+  ctx.fillText(p.name, W/2, 760);
+
+  // value pill
+  ctx.font = `900 40px ${F}`;
+  const label = 'RMIT Value: ' + p.value, tw = ctx.measureText(label).width + 70;
+  ctx.fillStyle = 'rgba(255,255,255,.95)'; ctx.beginPath(); ctx.roundRect(W/2 - tw/2, 800, tw, 70, 35); ctx.fill();
+  ctx.fillStyle = '#000054'; ctx.fillText(label, W/2, 849);
+
+  ctx.fillStyle = p.ink; ctx.font = `700 52px ${F}`;
+  wrapText(ctx, p.power, W/2, 980, W-260, 66);
+
+  ctx.font = `700 32px ${F}`; ctx.globalAlpha = .9;
+  ctx.fillText('What’s your digital marketing superpower?', W/2, H-130);
+  ctx.globalAlpha = 1;
+  return c;
+}
+
+async function savePersona(){
+  const msg = document.getElementById('saveMsg'), btn = document.getElementById('save');
+  btn.disabled = true; msg.textContent = 'Getting your persona ready…';
+  try{
+    const canvas = await buildCard(state.winner);
+    const blob = await new Promise(res => canvas.toBlob(res, 'image/png'));
+    const fname = `my-digital-marketing-superpower-${state.winner}.png`;
+    const file = new File([blob], fname, {type:'image/png'});
+    const touch = window.matchMedia('(pointer: coarse)').matches;
+    if(touch && navigator.canShare && navigator.canShare({files:[file]})){
+      try{ await navigator.share({files:[file], title:'My digital marketing superpower'}); msg.textContent = 'Shared! You can also save it to your photos.'; }
+      catch(e){ msg.textContent = e && e.name === 'AbortError' ? '' : 'Could not open sharing. Try again.'; }
+    } else {
+      const url = URL.createObjectURL(blob), a = document.createElement('a');
+      a.href = url; a.download = fname; document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 4000);
+      msg.textContent = 'Saved! Check your downloads.';
+    }
+  }catch(e){
+    msg.textContent = 'Sorry, saving didn’t work. Try a screenshot instead.';
+  }
+  btn.disabled = false;
+}
+
+render();
+</script>
+</body>
+</html>
