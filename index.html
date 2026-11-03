@@ -781,7 +781,7 @@
         font-size: clamp(16px, 1.05vw, 40px);
       }
       body.kiosk {
-        background: #000054;
+        background: #000;
         overflow: hidden;
       }
       .kiosk .topbar,
@@ -940,78 +940,31 @@
         animation-delay: calc(var(--i, 0) * 120ms), calc(var(--i, 0) * 120ms + 1.1s), var(--b, 0s);
       }
 
-      /* moving background: soft colour blobs drifting over deep navy */
+      /* moving background: a slow flight through a starfield tunnel (drawn on a canvas by startStarfield) */
       .kbg {
         position: fixed;
         inset: 0;
         z-index: 0;
         overflow: hidden;
-        background: linear-gradient(160deg, #000054 0%, #06063a 55%, #0b0b4f 100%);
+        background: #000;
       }
-      .kbg i {
+      .kbg canvas {
         position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
         display: block;
-        border-radius: 50%;
-        width: 70vmax;
-        height: 70vmax;
-        will-change: transform;
       }
-      .kbg i:nth-child(1) {
-        background: radial-gradient(circle, rgba(230, 30, 42, 0.65), rgba(230, 30, 42, 0) 65%);
-        left: -20vmax;
-        top: -25vmax;
-        animation: k1 42s ease-in-out infinite alternate;
-      }
-      .kbg i:nth-child(2) {
-        background: radial-gradient(circle, rgba(250, 200, 0, 0.38), rgba(250, 200, 0, 0) 65%);
-        right: -25vmax;
-        top: -10vmax;
-        animation: k2 50s ease-in-out infinite alternate;
-      }
-      .kbg i:nth-child(3) {
-        background: radial-gradient(circle, rgba(123, 63, 228, 0.6), rgba(123, 63, 228, 0) 65%);
-        left: -15vmax;
-        bottom: -35vmax;
-        animation: k3 46s ease-in-out infinite alternate;
-      }
-      .kbg i:nth-child(4) {
-        background: radial-gradient(circle, rgba(0, 184, 217, 0.45), rgba(0, 184, 217, 0) 65%);
-        right: -20vmax;
-        bottom: -30vmax;
-        animation: k4 54s ease-in-out infinite alternate;
-      }
-      .kbg i:nth-child(5) {
-        width: 50vmax;
-        height: 50vmax;
-        background: radial-gradient(circle, rgba(47, 93, 255, 0.5), rgba(47, 93, 255, 0) 65%);
-        left: 35vw;
-        top: 25vh;
-        animation: k5 60s ease-in-out infinite alternate;
-      }
-      @keyframes k1 {
-        to {
-          transform: translate(38vw, 30vh) scale(1.25);
-        }
-      }
-      @keyframes k2 {
-        to {
-          transform: translate(-35vw, 38vh) scale(0.85);
-        }
-      }
-      @keyframes k3 {
-        to {
-          transform: translate(42vw, -28vh) scale(1.2);
-        }
-      }
-      @keyframes k4 {
-        to {
-          transform: translate(-40vw, -30vh) scale(1.3);
-        }
-      }
-      @keyframes k5 {
-        to {
-          transform: translate(-25vw, -20vh) scale(1.35);
-        }
+      .kbg::after {
+        content: '';
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+        background: radial-gradient(
+          ellipse at center,
+          rgba(0, 0, 0, 0) 45%,
+          rgba(0, 0, 0, 0.55) 100%
+        );
       }
       .save-row {
         display: flex;
@@ -1126,8 +1079,7 @@
         .opt input:checked + label .letter,
         .pnote,
         .pnote.float,
-        .pnote.fresh,
-        .kbg i {
+        .pnote.fresh {
           animation: none !important;
         }
         .pgrid {
@@ -1701,6 +1653,12 @@
         pollMs: 30000, // students' phones
         kioskPollMs: 8000, // big screen (#board)
       };
+      /* TV background: tweak the flight here */
+      const STARFIELD = {
+        speed: 0.035, // how fast we fly forward (bigger = faster)
+        rotation: 0.015, // slow swirl of the tunnel, radians per second (0 = none)
+        density: 1, // 1 = normal, 0.5 = half as many stars, 1.5 = more
+      };
       const demoPosts = [
         {
           id: 'd1',
@@ -2001,6 +1959,122 @@
         b.style.gridTemplateColumns = `repeat(${cols}, ${w.toFixed(1)}px)`;
       }
 
+      /* Slow flight through a starfield tunnel. Stars sit on a cylinder around the flight path;
+         each one drifts toward the camera, grows, glows brighter, leaves the screen, and is
+         reborn far away, so the loop never has a visible seam. */
+      function startStarfield(canvas) {
+        const ctx = canvas.getContext('2d');
+        if (!ctx) return; // no canvas support: the plain black background stays
+        const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+        // one soft white glow sprite, reused for every star
+        const sprite = document.createElement('canvas');
+        sprite.width = sprite.height = 64;
+        const sg = sprite.getContext('2d');
+        const grad = sg.createRadialGradient(32, 32, 0, 32, 32, 32);
+        grad.addColorStop(0, 'rgba(255,255,255,1)');
+        grad.addColorStop(0.12, 'rgba(255,255,255,0.9)');
+        grad.addColorStop(0.3, 'rgba(225,232,255,0.34)');
+        grad.addColorStop(1, 'rgba(200,215,255,0)');
+        sg.fillStyle = grad;
+        sg.fillRect(0, 0, 64, 64);
+
+        let W = 0,
+          H = 0,
+          focal = 1,
+          stars = [];
+
+        function spawn(anywhere) {
+          return {
+            a: Math.random() * Math.PI * 2, // angle around the tunnel
+            r: 0.04 + Math.sqrt(Math.random()) * 1.15, // distance from the flight path
+            z: anywhere ? 0.04 + Math.random() * 0.96 : 1, // 1 = far away, 0 = at the camera
+            size: 0.003 + Math.random() * 0.005,
+            tw: 0.6 + Math.random() * 1.8, // twinkle speed
+            ph: Math.random() * 6.28,
+          };
+        }
+
+        function resize() {
+          // draw at no more than ~1080p; the glow is soft so it still looks sharp on a 4K TV
+          const scale = Math.min(1, 1920 / window.innerWidth);
+          W = canvas.width = Math.round(window.innerWidth * scale);
+          H = canvas.height = Math.round(window.innerHeight * scale);
+          focal = Math.max(W, H) * 0.55;
+          const n = Math.round(Math.min(2200, Math.max(700, (W * H) / 1200)) * STARFIELD.density);
+          stars = Array.from({ length: n }, () => spawn(true));
+        }
+
+        function draw(t, dt) {
+          const cx = W / 2 + Math.sin(t * 0.07) * W * 0.02; // gentle camera sway
+          const cy = H / 2 + Math.cos(t * 0.05) * H * 0.02;
+          ctx.globalCompositeOperation = 'source-over';
+          ctx.fillStyle = '#000';
+          ctx.fillRect(0, 0, W, H);
+          // faint glow at the far end of the tunnel
+          const g = ctx.createRadialGradient(cx, cy, 0, cx, cy, Math.max(W, H) * 0.5);
+          g.addColorStop(0, 'rgba(210,220,255,0.07)');
+          g.addColorStop(1, 'rgba(0,0,0,0)');
+          ctx.fillStyle = g;
+          ctx.fillRect(0, 0, W, H);
+
+          ctx.globalCompositeOperation = 'lighter';
+          for (let i = 0; i < stars.length; i++) {
+            const s = stars[i];
+            s.z -= STARFIELD.speed * dt;
+            s.a += STARFIELD.rotation * dt;
+            const sx = cx + ((s.r * Math.cos(s.a)) / s.z) * focal;
+            const sy = cy + ((s.r * Math.sin(s.a)) / s.z) * focal;
+            if (s.z < 0.03 || sx < -40 || sx > W + 40 || sy < -40 || sy > H + 40) {
+              stars[i] = spawn(false);
+              continue;
+            }
+            const d = Math.min(46, Math.max(2.5, (s.size * focal) / s.z)); // glow diameter in px
+            let alpha = Math.min(1, (1 - s.z) / 0.12); // fade in from the distance
+            alpha *= 0.75 + 0.25 * Math.sin(t * s.tw + s.ph); // twinkle
+            if (alpha <= 0.02) continue;
+            if (d > 14) {
+              // short trail on the closest stars gives a feeling of motion
+              const z2 = s.z + STARFIELD.speed * 1.2;
+              const px = cx + ((s.r * Math.cos(s.a)) / z2) * focal;
+              const py = cy + ((s.r * Math.sin(s.a)) / z2) * focal;
+              ctx.strokeStyle = 'rgba(255,255,255,' + (alpha * 0.35).toFixed(3) + ')';
+              ctx.lineWidth = Math.max(1, d * 0.07);
+              ctx.beginPath();
+              ctx.moveTo(px, py);
+              ctx.lineTo(sx, sy);
+              ctx.stroke();
+            }
+            ctx.globalAlpha = alpha;
+            ctx.drawImage(sprite, sx - d / 2, sy - d / 2, d, d);
+          }
+          ctx.globalAlpha = 1;
+        }
+
+        resize();
+        let resizeTimer;
+        window.addEventListener('resize', () => {
+          clearTimeout(resizeTimer);
+          resizeTimer = setTimeout(() => {
+            resize();
+            if (reduce) draw(0, 0);
+          }, 200);
+        });
+
+        if (reduce) {
+          draw(0, 0); // still image for people who prefer reduced motion
+          return;
+        }
+        let last = performance.now();
+        function frame(now) {
+          const dt = Math.min(0.05, (now - last) / 1000);
+          last = now;
+          draw(now / 1000, dt);
+          requestAnimationFrame(frame);
+        }
+        requestAnimationFrame(frame);
+      }
+
       /* big-screen mode: the board fills the rest of the screen (no scrolling), newest cards first */
       function fitBoard() {
         if (!document.body.classList.contains('kiosk')) return;
@@ -2016,8 +2090,14 @@
         const bg = document.createElement('div');
         bg.className = 'kbg';
         bg.setAttribute('aria-hidden', 'true');
-        bg.innerHTML = '<i></i><i></i><i></i><i></i><i></i>';
+        const cv = document.createElement('canvas');
+        bg.appendChild(cv);
         document.body.prepend(bg);
+        try {
+          startStarfield(cv);
+        } catch (e) {
+          /* the board still works on a plain black background */
+        }
         window.addEventListener('resize', fitBoard);
         /* press F for fullscreen */
         document.addEventListener('keydown', (e) => {
