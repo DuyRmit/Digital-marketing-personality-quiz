@@ -166,6 +166,18 @@ legend{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)
 .pnote.mine{border-color:var(--navy);box-shadow:0 0 0 3px var(--gold)}
 .pnote .hide{position:absolute;right:8px;bottom:8px;font:inherit;font-size:.8rem;font-weight:700;border:1px solid #b00613;color:#b00613;background:#fff;border-radius:99px;padding:4px 12px;cursor:pointer}
 .empty{margin-top:20px;text-align:center;padding:36px 12px;background:var(--mist);border-radius:18px;font-weight:700;color:var(--navy)}
+/* floating arrival: new cards rise from below and settle; on the big screen they keep a gentle drift */
+@keyframes floatIn{0%{opacity:0;translate:0 140px;scale:.9}55%{opacity:1}100%{opacity:1;translate:0 0;scale:1}}
+@keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+.pnote.float{animation:floatIn 1.2s cubic-bezier(.22,1.25,.36,1) backwards;animation-delay:calc(var(--i,0) * 120ms)}
+.kiosk .pnote{animation:bob 7s ease-in-out infinite;animation-delay:var(--b,0s)}
+.kiosk .pnote.float{animation:floatIn 1.2s cubic-bezier(.22,1.25,.36,1) backwards, bob 7s ease-in-out infinite;animation-delay:calc(var(--i,0) * 120ms), var(--b,0s)}
+.pn-t{display:flex;flex-direction:column;line-height:1.15;min-width:0}
+.pn-t b{overflow-wrap:anywhere}
+.pn-t small{font-weight:700;opacity:.9;font-size:.78rem}
+.field-label{display:block;margin-top:14px;font-weight:700;color:var(--navy)}
+#stepName{display:block;width:100%;max-width:320px;margin-top:6px;font:inherit;font-size:1rem;padding:12px 14px;border:2px solid var(--line);border-radius:14px;background:#fff;color:var(--text)}
+#stepName:focus-visible{outline:4px solid var(--gold);outline-offset:2px;border-color:var(--navy)}
 .kiosk .shell{max-width:1500px}
 .kiosk .board{column-width:300px}
 .kiosk .pnote p{font-size:1.25rem}
@@ -201,7 +213,7 @@ legend{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)
 }
 @media (prefers-reduced-motion:reduce){
   *{transition:none!important}
-  .in,.hero .badge,.opt input:checked + label .letter{animation:none!important}
+  .in,.hero .badge,.opt input:checked + label .letter,.pnote,.pnote.float{animation:none!important}
   .pgrid{scroll-behavior:auto}
   .spinner{animation-duration:3s}
 }
@@ -213,7 +225,7 @@ legend{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)
     <div class="brand">RMIT <span>Digital Marketing</span></div>
     <div class="progress" id="progress" hidden aria-label="Quiz progress"></div>
   </div>
-  <main><section class="card" id="stage" aria-live="polite"></section></main>
+  <main><section class="card" id="stage"></section></main>
 </div>
 
 <script>
@@ -349,7 +361,7 @@ const QUESTIONS = [
    STATE — nothing is stored in the browser, so a refresh or
    "Play again" always starts clean for the next student.
    ========================================================= */
-const state = { screen:'welcome', answers:Array(QUESTIONS.length).fill(null), tied:[], tieChoice:null, winner:null, draft:'', posted:null, boardFrom:'finish' };
+const state = { screen:'welcome', answers:Array(QUESTIONS.length).fill(null), tied:[], tieChoice:null, winner:null, draft:'', name:'', posted:null, boardFrom:'finish' };
 const LETTERS = ['A','B','C','D','E','F'];
 const stage = document.getElementById('stage');
 const progress = document.getElementById('progress');
@@ -372,7 +384,7 @@ function resetGame(){
   clearTimeout(calcTimer);
   state.screen = 'welcome';
   state.answers = Array(QUESTIONS.length).fill(null);
-  state.tied = []; state.tieChoice = null; state.winner = null; state.draft = ''; state.posted = null; state.boardFrom = 'finish';
+  state.tied = []; state.tieChoice = null; state.winner = null; state.draft = ''; state.name = ''; state.posted = null; state.boardFrom = 'finish';
 }
 
 function go(screen){ state.screen = screen; render(); window.scrollTo({top:0}); }
@@ -630,13 +642,15 @@ function renderFinish(){
 const BOARD = {
   endpoint:'https://superpower-board.duy-doan6.workers.dev',
   maxLen:140,
-  pollMs:8000
+  maxName:20,
+  pollMs:20000,      // students' phones
+  kioskPollMs:8000   // big screen (#board)
 };
 const demoPosts = [
-  {id:'d1', persona:'creator',     text:'Film one short video this week about something I care about.'},
-  {id:'d2', persona:'explorer',    text:'Try an AI tool I have never used and see what it can do.'},
-  {id:'d3', persona:'trust',       text:'Check that every claim in my next post is actually true.'},
-  {id:'d4', persona:'inclusive',   text:'Ask my classmates what kind of content they want to see.'}
+  {id:'d1', persona:'creator',   name:'Mai',  text:'Film one short video this week about something I care about.'},
+  {id:'d2', persona:'explorer',  name:'',     text:'Try an AI tool I have never used and see what it can do.'},
+  {id:'d3', persona:'trust',     name:'Khoa', text:'Check that every claim in my next post is actually true.'},
+  {id:'d4', persona:'inclusive', name:'',     text:'Ask my classmates what kind of content they want to see.'}
 ];
 const boardIsAdmin = location.hash === '#admin';
 let boardTimer = null, boardToken = null, boardSig = '';
@@ -652,20 +666,28 @@ function textProblem(t){
   return '';
 }
 
+function nameProblem(n){
+  const v = n.trim();
+  if(!v) return '';
+  if(v.length > BOARD.maxName) return `Keep the name under ${BOARD.maxName} characters.`;
+  if(/(https?:\/\/|www\.|\S+@\S+\.\S+|(\d[\s.\-]?){6,})/i.test(v)) return 'Please use a nickname without links or contact details.';
+  return '';
+}
+
 async function boardList(){
   if(!BOARD.endpoint) return demoPosts.slice();
   const r = await fetch(BOARD.endpoint + '/posts', {cache:'no-store'});
   if(!r.ok) throw new Error('list failed');
   return (await r.json()).posts || [];
 }
-async function boardPost(persona, text){
+async function boardPost(persona, text, name){
   if(!BOARD.endpoint){
-    const post = {id:'local' + Date.now(), persona, text};
+    const post = {id:'local' + Date.now(), persona, text, name};
     demoPosts.unshift(post); return post;
   }
   let r;
   try{
-    r = await fetch(BOARD.endpoint + '/posts', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({persona, text})});
+    r = await fetch(BOARD.endpoint + '/posts', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({persona, text, name})});
   }catch(e){ throw new Error('Couldn’t reach the board. Check your connection and try again.'); }
   const data = await r.json().catch(() => ({}));
   if(!r.ok) throw new Error(data.error || 'Couldn’t post. Please try again.');
@@ -679,13 +701,15 @@ async function boardHide(id){
 
 function postBlockHTML(){
   if(state.posted) return `
-    <div class="posted"><p><strong>You’re on the board!</strong> “${esc(state.posted.text)}”</p></div>
+    <div class="posted"><p><strong>You’re on the board!</strong> “${esc(state.posted.text)}”${state.posted.name ? ' — ' + esc(state.posted.name) : ''}</p></div>
     <div class="actions"><button class="btn" id="seeboard">See the board →</button><button class="btn ghost" id="cont">Continue →</button></div>`;
   return `
     <label class="next-step" for="stepText">My next step is to…</label>
     <textarea id="stepText" rows="3" maxlength="${BOARD.maxLen}" placeholder="Write one small, realistic action" autocomplete="off"></textarea>
     <div class="count"><span id="cnt">0</span>/${BOARD.maxLen}</div>
-    <p class="note">Your post goes on a shared board that everyone at Experience Day can see. It shows your persona, not your name. Please leave out names, links and contact details. Prefer pen and paper? Write it on a card at the booth instead.</p>
+    <label class="field-label" for="stepName">Name your card (optional)</label>
+    <input id="stepName" type="text" maxlength="${BOARD.maxName}" placeholder="A nickname, e.g. Mai" autocomplete="off">
+    <p class="note">Your card goes on a shared board that everyone at Experience Day can see. Please use a nickname instead of your full name, and leave out links and contact details. Prefer pen and paper? Write it on a card at the booth instead.</p>
     <p class="note err" id="postMsg" role="status"></p>
     <div class="actions"><button class="btn" id="post" disabled>Post to the board</button><button class="btn ghost" id="cont">Skip →</button></div>`;
 }
@@ -694,13 +718,15 @@ function wirePost(){
   const sb = document.getElementById('seeboard'); if(sb) sb.onclick = () => openBoard('result');
   const ta = document.getElementById('stepText'); if(!ta) return;
   const btn = document.getElementById('post'), cnt = document.getElementById('cnt'), msg = document.getElementById('postMsg');
+  const nm = document.getElementById('stepName'); nm.value = state.name;
+  nm.oninput = () => { state.name = nm.value; msg.textContent = ''; };
   ta.value = state.draft; cnt.textContent = ta.value.length; btn.disabled = !ta.value.trim();
   ta.oninput = () => { state.draft = ta.value; cnt.textContent = ta.value.length; btn.disabled = !ta.value.trim(); msg.textContent = ''; };
   btn.onclick = async () => {
-    const problem = textProblem(ta.value);
+    const problem = textProblem(ta.value) || nameProblem(nm.value);
     if(problem){ msg.textContent = problem; return; }
     btn.disabled = true; msg.textContent = 'Posting…';
-    try{ state.posted = await boardPost(state.winner, ta.value.trim()); openBoard('result'); }
+    try{ state.posted = await boardPost(state.winner, ta.value.trim(), nm.value.trim()); openBoard('result'); }
     catch(e){ msg.textContent = e.message; btn.disabled = false; }
   };
 }
@@ -709,10 +735,11 @@ function openBoard(from){ state.boardFrom = from; go('board'); }
 
 function noteHTML(post, idx, isNew){
   if(!PERSONAS[post.persona]) return '';
-  const p = PERSONAS[post.persona];
+  const p = PERSONAS[post.persona], nm = (post.name || '').trim();
   const mine = state.posted && String(state.posted.id) === String(post.id);
-  return `<article class="pnote${mine ? ' mine' : ''}${isNew ? ' in' : ''}" style="--c:${p.color};--ink:${p.ink};--i:${idx}">
-    <header><span class="pn-ic">${iconHTML(post.persona)}</span><b>${p.name}</b>${mine ? '<em>You</em>' : ''}</header>
+  const bob = (-Math.random() * 7).toFixed(1);
+  return `<article class="pnote${mine ? ' mine' : ''}${isNew ? ' float' : ''}" data-id="${esc(post.id)}" style="--c:${p.color};--ink:${p.ink};--i:${idx};--b:${bob}s">
+    <header><span class="pn-ic">${iconHTML(post.persona)}</span><span class="pn-t"><b>${nm ? esc(nm) : p.name}</b>${nm ? `<small>${p.name}</small>` : ''}</span>${mine ? '<em>You</em>' : ''}</header>
     <p>${esc(post.text)}</p>
     ${boardIsAdmin ? `<button type="button" class="hide" data-id="${esc(post.id)}">Hide</button>` : ''}
   </article>`;
@@ -727,10 +754,19 @@ async function refreshBoard(first){
     const sig = posts.map(p => p.id).join(',');
     if(sig !== boardSig || first){
       boardSig = sig;
+      const before = new Map([...el.querySelectorAll('.pnote')].map(n => [n.dataset.id, n.getBoundingClientRect()]));
       el.innerHTML = posts.length
         ? posts.map((p,i) => noteHTML(p, Math.min(i,10), first ? true : !seenIds.has(String(p.id)))).join('')
         : '<p class="empty">No posts yet. Be the first to share a next step!</p>';
       posts.forEach(p => seenIds.add(String(p.id)));
+      /* cards that were already there glide to their new spot instead of jumping */
+      if(!first && !reduceMotion){
+        el.querySelectorAll('.pnote:not(.float)').forEach(n => {
+          const o = before.get(n.dataset.id); if(!o) return;
+          const r = n.getBoundingClientRect(), dx = o.left - r.left, dy = o.top - r.top;
+          if(dx || dy) n.animate([{translate:`${dx}px ${dy}px`},{translate:'0 0'}], {duration:800, easing:'cubic-bezier(.2,.8,.2,1)'});
+        });
+      }
     }
     msg.textContent = '';
   }catch(e){
@@ -760,7 +796,7 @@ function renderBoard(){
     catch(e){ alert(e.message); boardToken = null; }
   });
   refreshBoard(true);
-  boardTimer = setInterval(() => refreshBoard(false), BOARD.pollMs);
+  boardTimer = setInterval(() => { if(!document.hidden) refreshBoard(false); }, kiosk ? BOARD.kioskPollMs : BOARD.pollMs);
   focusHeading();
 }
 
