@@ -843,27 +843,39 @@
       }
       .kjoin {
         flex: none;
+        display: flex;
+        align-items: center;
+        gap: 1.3rem;
         text-align: right;
         background: rgba(255, 255, 255, 0.1);
         border: 2px solid rgba(255, 255, 255, 0.28);
         border-radius: 1.2rem;
-        padding: 0.9rem 1.5rem;
+        padding: 0.8rem 0.8rem 0.8rem 1.6rem;
         color: #fff;
       }
       .kjoin span {
         display: block;
-        font-size: 1.05rem;
+        font-size: 1.1rem;
         opacity: 0.9;
       }
       .kjoin b {
         display: block;
-        font-size: 1.5rem;
+        font-size: 1.9rem;
+        line-height: 1.1;
         color: var(--gold);
-        margin-top: 0.15rem;
+        margin-bottom: 0.25rem;
       }
       .kjoin .note {
         margin: 0.3rem 0 0;
         font-size: 0.9rem;
+      }
+      .kqr {
+        display: block;
+        flex: none;
+        width: 9.5rem;
+        height: 9.5rem;
+        border-radius: 0.8rem;
+        background: #fff;
       }
       /* TV cards are 4:3. JS picks the column count so every card fits (up to ~100)
          and sets --cw (card width); text and icons scale with the card. */
@@ -1653,6 +1665,11 @@
         pollMs: 30000, // students' phones
         kioskPollMs: 8000, // big screen (#board)
       };
+      /* QR code shown on the big screen (points to the quiz). To change it, paste a new image as a
+         data URI or a file path such as 'img/qr.png'. Leave empty to show the web address instead. */
+      const JOIN_QR =
+        'data:image/png;base64,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';
+
       /* TV background: tweak the flight here */
       const STARFIELD = {
         speed: 0.035, // how fast we fly forward (bigger = faster)
@@ -1891,7 +1908,7 @@
         const head = kiosk
           ? `<div class="khead">
          <div><p class="kbrand">RMIT Digital Marketing · Experience Day</p><h2 data-focus>My Digital Marketing Superpower: Powered by RMIT Values</h2><p class="lead">One small next step from everyone in the room.</p></div>
-         <div class="kjoin"><span>Play and add your card</span><b>${joinUrl}</b><p class="note" id="boardMsg" role="status"></p></div>
+         <div class="kjoin"><div><b>${JOIN_QR ? 'Scan to play' : joinUrl}</b><span>${JOIN_QR ? 'Then add your own card to the board' : 'Play and add your card'}</span><p class="note" id="boardMsg" role="status"></p></div>${JOIN_QR ? `<img class="kqr" src="${JOIN_QR}" alt="QR code that opens the quiz">` : ''}</div>
        </div>`
           : `<h2 data-focus>My Digital Marketing Superpower: Powered by RMIT Values</h2><p class="lead">One small next step from everyone at Experience Day.</p>`;
         stage.innerHTML = `
