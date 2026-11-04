@@ -965,6 +965,28 @@
       .kfs:hover {
         background: rgba(255, 255, 255, 0.2);
       }
+      .kclear {
+        position: fixed;
+        left: 1.2rem;
+        bottom: 1.2rem;
+        z-index: 5;
+        font: inherit;
+        font-size: 1rem;
+        font-weight: 900;
+        color: #fff;
+        background: rgba(176, 6, 19, 0.85);
+        border: 2px solid rgba(255, 255, 255, 0.55);
+        border-radius: 99px;
+        padding: 0.6em 1.3em;
+        cursor: pointer;
+      }
+      .kclear:hover {
+        background: #b00613;
+      }
+      .kclear:focus-visible {
+        outline: 4px solid var(--gold);
+        outline-offset: 3px;
+      }
       .kfs:focus-visible {
         outline: 4px solid var(--gold);
         outline-offset: 3px;
@@ -1700,7 +1722,7 @@
    Needs the small Cloudflare Worker (board-worker.js). Until BOARD.endpoint
    is set, the board runs in demo mode (posts only live on this device).
    Open the page with #board for a big-screen booth display,
-   or #admin to get "Hide" buttons for moderation.
+   or #admin to get "Hide" buttons and a "Clear board" button for moderation.
    ========================================================= */
       const BOARD = {
         endpoint: 'https://superpower-board.duy-doan6.workers.dev',
@@ -1816,6 +1838,25 @@
         });
         if (!r.ok)
           throw new Error(r.status === 401 ? 'Wrong admin token.' : 'Could not hide that post.');
+      }
+      /* admin: hide every post at once (rows stay in the database, just flagged hidden) */
+      async function boardClearAll() {
+        if (!BOARD.endpoint) {
+          demoPosts.length = 0;
+          return;
+        }
+        const r = await fetch(BOARD.endpoint + '/posts', {
+          method: 'DELETE',
+          headers: { Authorization: 'Bearer ' + boardToken },
+        });
+        if (!r.ok)
+          throw new Error(
+            r.status === 401
+              ? 'Wrong admin token.'
+              : r.status === 404 || r.status === 405
+                ? 'The Worker does not support “clear board” yet. Update board-worker.js first.'
+                : 'Could not clear the board.',
+          );
       }
 
       function postBlockHTML() {
@@ -2198,6 +2239,37 @@
         fsBtn.hidden = !document.documentElement.requestFullscreen;
         fsBtn.onclick = toggleFullscreen;
         document.body.appendChild(fsBtn);
+        /* admin only: red "Clear board" button (bottom left) */
+        if (boardIsAdmin) {
+          const clr = document.createElement('button');
+          clr.type = 'button';
+          clr.className = 'kclear';
+          clr.textContent = 'Clear board';
+          clr.onclick = async () => {
+            const n = document.querySelectorAll('#board .pnote').length;
+            if (
+              !window.confirm(
+                'Hide ALL posts from the board' +
+                  (n ? ' (' + n + ' showing now)' : '') +
+                  '?\n\nThey stay in the database but disappear from every screen.',
+              )
+            )
+              return;
+            if (!BOARD.endpoint || boardToken === null)
+              boardToken = BOARD.endpoint ? window.prompt('Admin token') || null : 'demo';
+            if (!boardToken) return;
+            try {
+              await boardClearAll();
+              boardSig = '';
+              seenIds.clear();
+              refreshBoard(false);
+            } catch (e) {
+              alert(e.message);
+              boardToken = null;
+            }
+          };
+          document.body.appendChild(clr);
+        }
         document.addEventListener('fullscreenchange', () => {
           fsBtn.textContent = document.fullscreenElement ? 'Exit full screen' : 'Full screen';
         });
@@ -2205,7 +2277,7 @@
           if (e.key === 'f' || e.key === 'F') toggleFullscreen();
         });
         document.addEventListener('dblclick', (e) => {
-          if (!e.target.closest('.hide')) toggleFullscreen();
+          if (!e.target.closest('.hide, .kclear')) toggleFullscreen();
         });
         /* hide the mouse pointer after 3 seconds (not in admin mode) */
         if (!boardIsAdmin) {
