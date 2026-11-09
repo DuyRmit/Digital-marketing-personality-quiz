@@ -1,7 +1,9 @@
 /* marquee.js — băng chuyền card chạy ngang liên tục cho màn hình #board
  *
- * Card có kích thước cố định, tỉ lệ ratio (mặc định 3:4, rộng:cao), mỗi cột tối đa perCol card.
- * Cỡ card được tính từ chiều cao băng chuyền, nên card luôn vừa khít và chữ to nhất có thể.
+ * Mỗi cột xếp tối đa perCol card (mặc định 3) nằm dưới nhau, cách nhau gap px (mặc định 16).
+ * Chiều rộng card cố định; chiều cao mỗi card theo lượng chữ. Cột nào xếp thêm card mà
+ * vượt chiều cao băng chuyền thì card đó sang cột mới, nên cột có thể chỉ có 2 card nếu bài dài.
+ * Chiều rộng card (và cỡ chữ) được tính để 3 card cỡ trung bình vừa chiều cao băng chuyền.
  *
  * Vòng lặp: các cột nối liền nhau thành một vòng. Cột ra khỏi mép trái được nối lại vào cuối vòng,
  * không có khoảng trống. Nếu số bài ít hơn độ rộng màn hình, vòng được lấp bằng bản sao
@@ -14,8 +16,10 @@ window.Marquee = (function () {
   function create(root, userOpts) {
     const o = Object.assign({
       createCard: null,
-      perCol: 2,        // tối đa card / cột (nhiều hơn = card nhỏ hơn, chữ nhỏ hơn)
-      ratio: 3 / 4,     // rộng / cao của card
+      perCol: 3,        // số hàng: tối đa card / cột
+      gap: 16,          // khoảng cách giữa các card (px)
+      cardEm: 11.6,     // chiều cao card trung bình, tính bằng em (tăng nếu card hay bị tràn cột)
+      widthEm: 14,      // chiều rộng card = widthEm × cỡ chữ (giảm = card hẹp hơn, chữ to hơn)
       speed: 36,        // px / giây
       releaseMs: 700,   // giãn cách khi có nhiều bài mới cùng lúc
       enterMs: 600
@@ -27,21 +31,21 @@ window.Marquee = (function () {
     const queue = [];
     let openCol = null, drainTimer = null, last = performance.now();
     let first = true, raf = 0, dead = false, rr = 0;
-    let vw = 0, H = 0, gap = 12, colW = 0, cardW = 0, cardH = 0;
+    let vw = 0, H = 0, gap = 16, colW = 0, cardW = 0;
 
     function measure() {
       if (root.clientHeight < 100)
         root.style.height = Math.max(240, window.innerHeight - root.getBoundingClientRect().top - 24) + 'px';
       vw = root.clientWidth; H = root.clientHeight;
-      gap = Math.max(8, Math.round(vw * 0.007));
-      cardH = Math.floor((H - (o.perCol + 1) * gap) / o.perCol);
-      cardW = Math.floor(cardH * o.ratio);
+      gap = o.gap;
+      const font = (H - (o.perCol + 1) * gap) / (o.perCol * o.cardEm);   // px
+      cardW = Math.floor(font * o.widthEm);
       colW = cardW + gap;
       const st = root.style;
       st.setProperty('--gap', gap + 'px');
       st.setProperty('--mq-col-w', colW + 'px');
       st.setProperty('--mq-card-w', cardW + 'px');
-      st.setProperty('--mq-card-h', cardH + 'px');
+      st.setProperty('--mq-font', font.toFixed(2) + 'px');
     }
     measure();
 
@@ -105,6 +109,16 @@ window.Marquee = (function () {
       return col;
     }
 
+    /* card thêm vào cột này có còn vừa chiều cao băng chuyền không? (đo chiều cao thật) */
+    function wouldFit(col, el) {
+      col.el.appendChild(el);
+      let h = 0;
+      col.cards.forEach(c => { h += c.el.offsetHeight; });
+      h += el.offsetHeight + col.cards.length * gap;
+      el.remove();
+      return h <= H * 0.97;
+    }
+
     /* ---------- thêm / xoá card (FLIP để card cũ trượt mượt khi cột đổi) ---------- */
     function flipSiblings(col, mutate) {
       const before = new Map(col.cards.map(c => [c, c.el.getBoundingClientRect().top]));
@@ -126,11 +140,12 @@ window.Marquee = (function () {
 
     function addCard(post) {
       if (known.has(post.id)) return;
-      let col = openCol;
-      const usable = col && cols.includes(col) && col.cards.length < o.perCol && col.x > vw * 0.2;
-      if (!usable) col = openCol = insertColAtEdge();
       const el = o.createCard(post);
       el.classList.add('mq-enter');
+      let col = openCol;
+      const usable = col && cols.includes(col) && col.cards.length < o.perCol &&
+                     col.x > vw * 0.2 && wouldFit(col, el);
+      if (!usable) col = openCol = insertColAtEdge();
       const item = { id: post.id, el, col };
       flipSiblings(col, () => { col.el.appendChild(el); col.cards.push(item); });
       known.set(post.id, item);
@@ -197,16 +212,16 @@ window.Marquee = (function () {
       const ids = new Set(posts.map(p => p.id));
       if (first) {
         first = false;
-        for (let i = 0; i < posts.length; i += o.perCol) {
-          const col = { el: makeColEl(), x: (i / o.perCol) * colW, off: 0, cards: [], clone: false, src: null };
-          cols.push(col);
-          posts.slice(i, i + o.perCol).forEach(p => {
-            const el = o.createCard(p);
-            const item = { id: p.id, el, col };
-            col.el.appendChild(el); col.cards.push(item); known.set(p.id, item);
-          });
-          place(col);
-        }
+        let col = null;
+        posts.forEach(p => {
+          const el = o.createCard(p);
+          if (!col || col.cards.length >= o.perCol || !wouldFit(col, el)) {
+            col = { el: makeColEl(), x: cols.length * colW, off: 0, cards: [], clone: false, src: null };
+            cols.push(col); place(col);
+          }
+          const item = { id: p.id, el, col };
+          col.el.appendChild(el); col.cards.push(item); known.set(p.id, item);
+        });
         fill();
         return;
       }
