@@ -248,7 +248,7 @@
       .pcard .pic img {
         width: 100%;
         height: 100%;
-        object-fit: cover;
+        object-fit: contain;
         display: block;
       }
       .pcard h3 {
@@ -520,7 +520,7 @@
       .badge img {
         width: 100%;
         height: 100%;
-        object-fit: cover;
+        object-fit: contain;
         display: block;
       }
       .hero h2 {
@@ -662,7 +662,7 @@
       .pn-ic img {
         width: 100%;
         height: 100%;
-        object-fit: cover;
+        object-fit: contain;
         display: block;
       }
       .pnote p {
@@ -1058,6 +1058,18 @@
         line-height: 1;
         margin-bottom: 12px;
       }
+      .finish .big img {
+        width: 96px;
+        height: 96px;
+        object-fit: contain;
+        display: inline-block;
+      }
+      .opt .letter img {
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+        display: block;
+      }
 
       /* desktop */
       @media (min-width: 820px) {
@@ -1184,13 +1196,13 @@
    ========================================================= */
 
       /* Persona assets: when the final icons are ready, set `image` to a file path or URL
-   (e.g. 'img/creator.png'). Until then the emoji is used as a placeholder.
+   (e.g. 'img/creator.webp'). Until then the emoji is used as a placeholder.
    Icons are also drawn onto the downloadable result card. */
       const PERSONAS = {
         creator: {
           name: 'Creator',
           emoji: '✨',
-          image: '',
+          image: 'img/creator.webp',
           value: 'Imagination',
           power: 'Turn imaginative ideas into shareable stories.',
           blurb:
@@ -1204,7 +1216,7 @@
         inclusive: {
           name: 'Inclusive Marketer',
           emoji: '🤝',
-          image: '',
+          image: 'img/inclusive-marketer.webp',
           value: 'Inclusion',
           power: 'Connect different voices and build welcoming communities.',
           blurb:
@@ -1218,7 +1230,7 @@
         trust: {
           name: 'Trust Builder',
           emoji: '🔒',
-          image: '',
+          image: 'img/trust-builder.webp',
           value: 'Integrity',
           power: 'Earn trust through honesty and transparency.',
           blurb:
@@ -1232,7 +1244,7 @@
         explorer: {
           name: 'Explorer',
           emoji: '🚀',
-          image: '',
+          image: 'img/explorer.webp',
           value: 'Courage',
           power: 'Experiment with new ideas and digital tools.',
           blurb:
@@ -1246,7 +1258,7 @@
         strategist: {
           name: 'Strategist',
           emoji: '🧠',
-          image: '',
+          image: 'img/strategist.webp',
           value: 'Passion',
           power: 'Pursue marketing goals with research and planning.',
           blurb:
@@ -1260,7 +1272,7 @@
         changemaker: {
           name: 'Changemaker',
           emoji: '⚡',
-          image: '',
+          image: 'img/changemaker.webp',
           value: 'Impact',
           power: 'Turn insight into meaningful, measurable results.',
           blurb:
@@ -1634,7 +1646,7 @@
               (k) => `
             <div class="opt">
               <input type="radio" name="tie" id="tie-${k}" value="${k}" ${state.tieChoice === k ? 'checked' : ''}>
-              <label for="tie-${k}"><span class="letter" aria-hidden="true">${PERSONAS[k].emoji}</span><span>${PERSONAS[k].name}<br><small style="font-weight:400">${PERSONAS[k].power}</small></span></label>
+              <label for="tie-${k}"><span class="letter" aria-hidden="true">${iconHTML(k)}</span><span>${PERSONAS[k].name}<br><small style="font-weight:400">${PERSONAS[k].power}</small></span></label>
             </div>`,
             )
             .join('')}
@@ -1702,7 +1714,7 @@
       function renderFinish() {
         stage.innerHTML = `
     <div class="finish">
-      <div class="big" aria-hidden="true">${PERSONAS[state.winner].emoji}</div>
+      <div class="big" aria-hidden="true">${iconHTML(state.winner)}</div>
       <h2 data-focus>Thanks for playing!</h2>
       <p class="lead">Keep exploring, creating and making an impact with your superpower and RMIT Value!</p>
       <div class="actions"><button class="btn" id="again">Play again ↻</button><button class="btn ghost" id="seeBoard">See the board</button></div>
@@ -2376,7 +2388,10 @@
             ctx.beginPath();
             ctx.arc(cx, cy, r, 0, Math.PI * 2);
             ctx.clip();
-            ctx.drawImage(im, cx - r, cy - r, r * 2, r * 2);
+            const sc = Math.min((r * 2) / im.width, (r * 2) / im.height);
+            const dw = im.width * sc,
+              dh = im.height * sc;
+            ctx.drawImage(im, cx - dw / 2, cy - dh / 2, dw, dh);
             ctx.restore();
             drawn = true;
           }
