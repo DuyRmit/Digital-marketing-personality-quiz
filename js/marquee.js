@@ -25,6 +25,9 @@ window.Marquee = (function () {
     let vw = 0, colW = 0;
 
     function measure() {
+      /* tự đặt chiều cao nếu khung đang bị 0 (ví dụ kiosk.js bản cũ chưa đặt) */
+      if (root.clientHeight < 100)
+        root.style.height = Math.max(240, window.innerHeight - root.getBoundingClientRect().top - 24) + 'px';
       vw = root.clientWidth;
       colW = Math.round(vw / o.visibleCols);
       root.style.setProperty('--mq-col-w', colW + 'px');
