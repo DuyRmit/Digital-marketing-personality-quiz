@@ -237,8 +237,9 @@
       .pcard .pic {
         width: 110px;
         height: 110px;
-        border-radius: 50%;
-        background: rgba(255, 255, 255, 0.92);
+        border-radius: 22px;
+        background: #fff;
+        padding: 6px;
         display: grid;
         place-items: center;
         font-size: 3.6rem;
@@ -509,8 +510,9 @@
       .badge {
         width: min(220px, 56vw);
         aspect-ratio: 1;
-        border-radius: 50%;
-        background: rgba(255, 255, 255, 0.92);
+        border-radius: 12%;
+        background: #fff;
+        padding: 3%;
         display: grid;
         place-items: center;
         font-size: clamp(4.5rem, 22vw, 7.5rem);
@@ -651,8 +653,9 @@
       .pn-ic {
         width: 34px;
         height: 34px;
-        border-radius: 50%;
-        background: rgba(255, 255, 255, 0.92);
+        border-radius: 9px;
+        background: #fff;
+        padding: 2px;
         display: grid;
         place-items: center;
         font-size: 1.2rem;
@@ -1059,8 +1062,12 @@
         margin-bottom: 12px;
       }
       .finish .big img {
-        width: 96px;
-        height: 96px;
+        width: 110px;
+        height: 110px;
+        padding: 6px;
+        border-radius: 22px;
+        background: #fff;
+        box-shadow: 0 6px 18px rgba(0, 0, 0, 0.12);
         object-fit: contain;
         display: inline-block;
       }
@@ -2372,27 +2379,24 @@
         ctx.font = `700 38px ${F}`;
         ctx.fillText('My digital marketing persona is…', W / 2, 150);
 
-        // icon circle
+        // icon panel (rounded square, image shown whole, never cropped)
         const cx = W / 2,
           cy = 430,
-          r = 200;
-        ctx.fillStyle = 'rgba(255,255,255,.93)';
+          r = 200,
+          pad = 18;
+        ctx.fillStyle = '#fff';
         ctx.beginPath();
-        ctx.arc(cx, cy, r, 0, Math.PI * 2);
+        ctx.roundRect(cx - r, cy - r, r * 2, r * 2, 56);
         ctx.fill();
         let drawn = false;
         if (p.image) {
           const im = await loadImg(p.image);
           if (im) {
-            ctx.save();
-            ctx.beginPath();
-            ctx.arc(cx, cy, r, 0, Math.PI * 2);
-            ctx.clip();
-            const sc = Math.min((r * 2) / im.width, (r * 2) / im.height);
+            const box = (r - pad) * 2;
+            const sc = Math.min(box / im.width, box / im.height);
             const dw = im.width * sc,
               dh = im.height * sc;
             ctx.drawImage(im, cx - dw / 2, cy - dh / 2, dw, dh);
-            ctx.restore();
             drawn = true;
           }
         }
