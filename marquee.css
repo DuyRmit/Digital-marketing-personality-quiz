@@ -1,0 +1,35 @@
+/* marquee.css — nạp SAU kiosk.css. Băng chuyền card cho màn hình #board */
+.mq { position: relative; width: 100%; overflow: hidden; margin-top: 1.2rem; }
+
+/* marquee.js tính sẵn: --gap, --mq-col-w, --mq-card-w, --mq-card-h (card tỉ lệ 3:4) */
+.mq-col {
+  position: absolute; top: 0; left: 0; height: 100%;
+  width: var(--mq-col-w);
+  display: flex; flex-direction: column; justify-content: center; align-items: center;
+  gap: var(--gap);
+  padding: 0 calc(var(--gap) / 2); box-sizing: border-box;
+  will-change: transform;
+}
+
+.mq .pnote {
+  flex: 0 0 auto; box-sizing: border-box; margin: 0;
+  width: var(--mq-card-w); height: var(--mq-card-h);
+  display: flex; flex-direction: column; overflow: hidden;
+  /* chữ theo bề rộng card; đổi 14 thành số nhỏ hơn (12, 13) để chữ to hơn, lớn hơn (15, 16) nếu card bị cắt chữ */
+  font-size: calc(var(--mq-card-w) / 14);
+  border-radius: 0.9em;
+  animation: none;
+  transition: opacity .5s ease, transform .6s cubic-bezier(.2,.8,.2,1);
+}
+.mq .pnote header { flex: none; padding: 0.55em 0.7em; }
+.mq .pnote p { flex: 1 1 auto; min-height: 0; overflow: hidden; }
+.mq .pnote .pn-v { flex: none; align-self: flex-start; }
+.mq .pnote.mq-enter { opacity: 0; transform: translateX(90px) scale(.88); }
+.mq .pnote.mq-leave { opacity: 0; transform: scale(.9); transition-duration: .3s; }
+.mq .pnote.mq-glow { animation: glow 1.8s ease-out; }   /* @keyframes glow có sẵn trong kiosk.css */
+
+.mq:empty::before {
+  content: 'No posts yet. Be the first to share a next step!';
+  display: block; background: rgba(255,255,255,.1); color: #fff;
+  font-size: 2rem; padding: 4rem 2rem; border-radius: 1.5rem;
+}
