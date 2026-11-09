@@ -1,0 +1,160 @@
+:root {
+  --navy: #000054;
+  --navy-2: #0d0d6b;
+  --red: #e61e2a;
+  --gold: #fac800;
+  --paper: #ffffff;
+  --mist: #eef0fb;
+  --line: #c9cdee;
+  --text: #12123a;
+  --accent: #e61e2a;
+  --accent-ink: #ffffff;
+  --radius: 18px;
+  --font: 'Lato', system-ui, -apple-system, 'Segoe UI', Roboto, Arial, sans-serif;
+}
+* {
+  box-sizing: border-box;
+}
+html,
+body {
+  margin: 0;
+  min-height: 100%;
+}
+body {
+  font-family: var(--font);
+  color: var(--text);
+  background: #f1f2fb;
+  line-height: 1.5;
+  -webkit-text-size-adjust: 100%;
+  padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom)
+    env(safe-area-inset-left);
+}
+.shell {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 20px 16px 40px;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  color: var(--navy);
+  padding: 4px 2px 16px;
+}
+.brand {
+  font-weight: 900;
+  font-size: 0.95rem;
+  letter-spacing: 0.01em;
+}
+.brand span {
+  color: var(--red);
+}
+.progress {
+  display: flex;
+  gap: 2px;
+  align-items: center;
+}
+.pstep {
+  display: block;
+  border: 0;
+  background: none;
+  padding: 12px 3px;
+  margin: 0;
+  font: inherit;
+}
+.pstep i {
+  width: 26px;
+  height: 6px;
+  border-radius: 99px;
+  background: var(--line);
+  display: block;
+  transition: background 0.2s;
+}
+.pstep.done i {
+  background: var(--navy);
+}
+.pstep.now i {
+  background: var(--red);
+}
+button.pstep {
+  cursor: pointer;
+}
+button.pstep:hover i {
+  background: var(--red);
+}
+button.pstep:focus-visible {
+  outline: 3px solid var(--navy);
+  outline-offset: 1px;
+  border-radius: 8px;
+}
+.progress[hidden] {
+  display: none;
+}
+main {
+  flex: 1;
+  display: flex;
+}
+.card {
+  background: var(--paper);
+  border-radius: 28px;
+  padding: 24px 20px 28px;
+  width: 100%;
+  border: 1px solid var(--line);
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.08);
+  align-self: flex-start;
+  --cardpad: 20px;
+}
+h1,
+h2,
+h3 {
+  margin: 0;
+  line-height: 1.1;
+  color: var(--navy);
+}
+h1 {
+  font-size: clamp(2rem, 7vw, 3.6rem);
+  font-weight: 900;
+  letter-spacing: -0.02em;
+}
+h2 {
+  font-size: clamp(1.5rem, 4.6vw, 2.2rem);
+  font-weight: 900;
+  letter-spacing: -0.01em;
+}
+h1:focus,
+h2:focus {
+  outline: none;
+}
+p {
+  margin: 0;
+}
+.lead {
+  font-size: 1.1rem;
+  margin-top: 14px;
+  max-width: 46ch;
+}
+.note {
+  font-size: 0.95rem;
+  color: #4a4a78;
+  margin-top: 10px;
+  max-width: 50ch;
+}
+.kicker {
+  display: inline-block;
+  background: var(--mist);
+  color: var(--navy);
+  font-weight: 700;
+  font-size: 0.9rem;
+  padding: 5px 12px;
+  border-radius: 99px;
+  margin-bottom: 14px;
+}
+.scenario {
+  font-size: 1.15rem;
+  margin-top: 10px;
+  max-width: 50ch;
+}

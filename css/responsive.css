@@ -1,0 +1,108 @@
+/* desktop */
+@media (min-width: 820px) {
+  .shell {
+    padding: 28px 32px 56px;
+  }
+  .card {
+    padding: 44px 52px 48px;
+  }
+  .opts {
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+  .opt label {
+    min-height: 76px;
+  }
+  .hero {
+    grid-template-columns: 240px 1fr;
+    text-align: left;
+    justify-items: start;
+    align-items: center;
+    padding: 32px 36px;
+    gap: 32px;
+  }
+  .badge {
+    width: 240px;
+  }
+  .reveal {
+    grid-template-columns: 1fr 1fr;
+    align-items: start;
+  }
+  .reveal .hero {
+    grid-column: 1 / -1;
+  }
+  .tie .opts {
+    grid-template-columns: 1fr 1fr;
+  }
+  .welcome {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr);
+    grid-template-areas: 'intro cards' 'go cards';
+    grid-template-rows: auto 1fr;
+    column-gap: 44px;
+    align-items: start;
+  }
+  .w-go {
+    align-self: end;
+  }
+  .pgrid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+    overflow: visible;
+    margin: 0;
+    padding: 0;
+    scroll-snap-type: none;
+  }
+  .pcard {
+    flex: none;
+    max-width: none;
+    padding: 20px 18px 22px;
+    gap: 10px;
+  }
+  .pcard:not(.is-active) {
+    transform: none;
+  }
+  .pcard .pic {
+    width: 96px;
+    height: 96px;
+    font-size: 3.2rem;
+  }
+  .pcard h3 {
+    font-size: 1.2rem;
+  }
+  .pcard p {
+    font-size: 0.92rem;
+  }
+  .pdots,
+  .swipe-hint {
+    display: none;
+  }
+}
+@media (max-width: 380px) {
+  .progress i {
+    width: 18px;
+  }
+  .card {
+    padding: 20px 14px 24px;
+    --cardpad: 14px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  * {
+    transition: none !important;
+  }
+  .in,
+  .hero .badge,
+  .opt input:checked + label .letter,
+  .pnote,
+  .pnote.float,
+  .pnote.fresh {
+    animation: none !important;
+  }
+  .pgrid {
+    scroll-behavior: auto;
+  }
+  .spinner {
+    animation-duration: 3s;
+  }
+}

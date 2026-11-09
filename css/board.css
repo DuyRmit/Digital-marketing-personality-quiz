@@ -1,0 +1,222 @@
+/* post + shared board */
+.next-step {
+  display: block;
+  margin-top: 14px;
+  font-weight: 900;
+  color: var(--navy);
+  font-size: 1.05rem;
+}
+#stepText {
+  display: block;
+  width: 100%;
+  margin-top: 8px;
+  font: inherit;
+  font-size: 1rem;
+  line-height: 1.4;
+  padding: 14px 16px;
+  border: 2px dashed var(--navy);
+  border-radius: 16px;
+  background: #fff;
+  color: var(--text);
+  resize: vertical;
+  min-height: 96px;
+}
+#stepText:focus-visible {
+  outline: 4px solid var(--gold);
+  outline-offset: 2px;
+  border-style: solid;
+}
+.count {
+  text-align: right;
+  font-size: 0.85rem;
+  color: #4a4a78;
+  margin-top: 4px;
+}
+.err {
+  color: #b00613;
+  font-weight: 700;
+  min-height: 1.2em;
+}
+.posted {
+  margin-top: 14px;
+  background: #fff;
+  border-radius: 16px;
+  padding: 14px 16px;
+  border: 2px solid var(--navy);
+}
+.demo {
+  background: #fff6d1;
+  border: 1px solid var(--gold);
+  border-radius: 12px;
+  padding: 8px 12px;
+}
+.board {
+  column-width: 240px;
+  column-gap: 14px;
+  margin-top: 20px;
+}
+.pnote {
+  break-inside: avoid;
+  margin: 0 0 14px;
+  background: #fff;
+  border: 2px solid var(--line);
+  border-radius: 18px;
+  overflow: hidden;
+  position: relative;
+}
+.pnote header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--c);
+  color: var(--ink);
+  padding: 10px 12px;
+  font-weight: 900;
+}
+.pnote header em {
+  margin-left: auto;
+  font-style: normal;
+  font-size: 0.8rem;
+  background: rgba(255, 255, 255, 0.92);
+  color: var(--navy);
+  padding: 2px 10px;
+  border-radius: 99px;
+}
+.pn-ic {
+  width: 34px;
+  height: 34px;
+  border-radius: 9px;
+  background: #fff;
+  padding: 2px;
+  display: grid;
+  place-items: center;
+  font-size: 1.2rem;
+  overflow: hidden;
+  flex: none;
+}
+.pn-ic img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+}
+.pnote p {
+  padding: 14px 14px 16px;
+  font-size: 1.02rem;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+.pn-v {
+  width: fit-content;
+  margin: -4px 14px 14px;
+  padding: 3px 12px;
+  border-radius: 99px;
+  background: var(--c);
+  color: var(--ink);
+  font-size: 0.85rem;
+  font-weight: 900;
+}
+.pnote.mine {
+  border-color: var(--navy);
+  box-shadow: 0 0 0 3px var(--gold);
+}
+.pnote .hide {
+  position: absolute;
+  right: 8px;
+  bottom: 8px;
+  font: inherit;
+  font-size: 0.8rem;
+  font-weight: 700;
+  border: 1px solid #b00613;
+  color: #b00613;
+  background: #fff;
+  border-radius: 99px;
+  padding: 4px 12px;
+  cursor: pointer;
+}
+.empty {
+  margin-top: 20px;
+  text-align: center;
+  padding: 36px 12px;
+  background: var(--mist);
+  border-radius: 18px;
+  font-weight: 700;
+  color: var(--navy);
+}
+/* floating arrival: new cards rise from below and settle; on the big screen they keep a gentle drift */
+@keyframes floatIn {
+  0% {
+    opacity: 0;
+    translate: 0 140px;
+    scale: 0.9;
+  }
+  55% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 1;
+    translate: 0 0;
+    scale: 1;
+  }
+}
+@keyframes bob {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-6px);
+  }
+}
+.pnote.float {
+  animation: floatIn 1.2s cubic-bezier(0.22, 1.25, 0.36, 1) backwards;
+  animation-delay: calc(var(--i, 0) * 120ms);
+}
+.kiosk .pnote {
+  animation: bob 7s ease-in-out infinite;
+  animation-delay: var(--b, 0s);
+}
+.kiosk .pnote.float {
+  animation:
+    floatIn 1.2s cubic-bezier(0.22, 1.25, 0.36, 1) backwards,
+    bob 7s ease-in-out infinite;
+  animation-delay: calc(var(--i, 0) * 120ms), var(--b, 0s);
+}
+.pn-t {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.15;
+  min-width: 0;
+}
+.pn-t b {
+  overflow-wrap: anywhere;
+}
+.pn-t small {
+  font-weight: 700;
+  opacity: 0.9;
+  font-size: 0.78rem;
+}
+.field-label {
+  display: block;
+  margin-top: 14px;
+  font-weight: 700;
+  color: var(--navy);
+}
+#stepName {
+  display: block;
+  width: 100%;
+  max-width: 320px;
+  margin-top: 6px;
+  font: inherit;
+  font-size: 1rem;
+  padding: 12px 14px;
+  border: 2px solid var(--line);
+  border-radius: 14px;
+  background: #fff;
+  color: var(--text);
+}
+#stepName:focus-visible {
+  outline: 4px solid var(--gold);
+  outline-offset: 2px;
+  border-color: var(--navy);
+}
