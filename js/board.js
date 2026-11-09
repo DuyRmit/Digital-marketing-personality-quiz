@@ -37,6 +37,7 @@ let boardTimer = null,
   boardToken = null,
   boardSig = '';
 const seenIds = new Set();
+let kioskMq = null; /* băng chuyền card trên TV (marquee.js) */
 
 function esc(t) {
   return String(t).replace(
@@ -198,7 +199,26 @@ function noteHTML(post, idx, isNew, first) {
   </article>`;
 }
 
+function cardEl(post) {
+  const t = document.createElement('template');
+  t.innerHTML = noteHTML(post, 0, false, true).trim();
+  return t.content.firstElementChild;
+}
+
 async function refreshBoard(first) {
+  /* TV: băng chuyền chạy ngang, marquee.js tự lo vị trí và animation */
+  if (kioskMq) {
+    const m = document.getElementById('boardMsg');
+    try {
+      const posts = await boardList();
+      if (!document.getElementById('mqboard')) return;
+      kioskMq.setPosts(posts.filter((p) => PERSONAS[p.persona]));
+      if (m) m.textContent = '';
+    } catch (e) {
+      if (m) m.textContent = 'Couldn’t load the board. Trying again…';
+    }
+    return;
+  }
   let el = document.getElementById('board');
   if (!el) return;
   const msg = document.getElementById('boardMsg');
@@ -251,6 +271,7 @@ function renderBoard() {
     from = state.boardFrom;
   boardSig = '';
   seenIds.clear();
+  if (kioskMq) { kioskMq.destroy(); kioskMq = null; }
   const joinUrl = (location.origin + location.pathname)
     .replace(/^https?:\/\//, '')
     .replace(/\/$/, '');
@@ -263,17 +284,19 @@ function renderBoard() {
   stage.innerHTML = `
     ${head}
     ${BOARD.endpoint ? '' : '<p class="note demo">Demo mode: posts are only visible on this device until the board is connected.</p>'}
-    <div class="board" id="board" aria-live="polite"></div>
+    ${kiosk ? '<div class="mq" id="mqboard" aria-live="off"></div>' : '<div class="board" id="board" aria-live="polite"></div>'}
     ${kiosk ? '' : '<p class="note" id="boardMsg" role="status"></p>'}
     ${kiosk ? '' : `<div class="actions"><button class="btn ghost" id="bback">← Back</button>${from === 'result' ? '<button class="btn grow" id="bnext">Continue →</button>' : ''}</div>`}`;
-  fitBoard();
+  fitBoard(); /* TV: đặt chiều cao cho #mqboard */
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(fitBoard);
+  if (kiosk) kioskMq = Marquee.create(document.getElementById('mqboard'), { createCard: cardEl });
   if (!kiosk) {
     document.getElementById('bback').onclick = () => go(from);
     const nx = document.getElementById('bnext');
     if (nx) nx.onclick = () => go('finish');
   }
-  document.getElementById('board').addEventListener('click', async (ev) => {
+  const boardEl = document.getElementById('board') || document.getElementById('mqboard');
+  if (boardEl) boardEl.addEventListener('click', async (ev) => {
     const b = ev.target.closest('.hide');
     if (!b) return;
     if (!BOARD.endpoint || boardToken === null)

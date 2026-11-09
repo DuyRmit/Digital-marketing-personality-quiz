@@ -168,13 +168,13 @@ function startStarfield(canvas) {
 /* big-screen mode: the board fills the rest of the screen (no scrolling), newest cards first */
 function fitBoard() {
   if (!document.body.classList.contains('kiosk')) return;
-  const b = document.getElementById('board');
+  const b = document.getElementById('board') || document.getElementById('mqboard');
   if (!b) return;
   const shell = document.querySelector('.shell');
   const pad = parseFloat(getComputedStyle(shell).paddingBottom) || 0;
   b.style.height =
     Math.max(240, window.innerHeight - b.getBoundingClientRect().top - pad) + 'px';
-  layoutKioskBoard();
+  layoutKioskBoard(); // no-op for #mqboard (looks for #board)
 }
 function initKiosk() {
   const bg = document.createElement('div');
@@ -209,7 +209,7 @@ function initKiosk() {
     clr.className = 'kclear';
     clr.textContent = 'Clear board';
     clr.onclick = async () => {
-      const n = document.querySelectorAll('#board .pnote').length;
+      const n = document.querySelectorAll('#board .pnote, #mqboard .pnote').length;
       if (
         !window.confirm(
           'Hide ALL posts from the board' +
