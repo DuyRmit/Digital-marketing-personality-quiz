@@ -1,0 +1,37 @@
+/* marquee.css — nạp SAU kiosk.css. Băng chuyền card cho màn hình #board */
+.mq {
+  position: relative; width: 100%; overflow: hidden;
+  margin-top: 1.2rem;
+  --gap: clamp(8px, 0.7vw, 16px);
+}
+.mq-col {
+  position: absolute; top: 0; left: 0; height: 100%;
+  width: var(--mq-col-w);
+  display: flex; flex-direction: column; justify-content: space-evenly;
+  padding: 0 var(--gap); box-sizing: border-box;
+  will-change: transform;
+}
+
+/* Cỡ chữ theo chiều cao cột: 5 card (tối đa) phải vừa chiều cao băng chuyền.
+   Số 11 = số "em" chiều cao của một card ~2 dòng chữ. Tăng số này nếu card bị cắt,
+   giảm nếu muốn chữ to hơn. */
+.mq .pnote {
+  flex: 0 0 auto; box-sizing: border-box; width: 100%;
+  margin: 0;
+  font-size: calc((var(--mq-h, 600px) - (var(--mq-n, 5) + 1) * var(--gap)) / var(--mq-n, 5) / 11);
+  max-height: calc((100% - (var(--mq-n, 5) + 1) * var(--gap)) / var(--mq-n, 5));
+  overflow: hidden;
+  border-radius: 0.9em;
+  animation: none;
+  transition: opacity .5s ease, transform .6s cubic-bezier(.2,.8,.2,1);
+}
+.mq .pnote header { padding: 0.45em 0.7em; }
+.mq .pnote.mq-enter { opacity: 0; transform: translateX(90px) scale(.88); }
+.mq .pnote.mq-leave { opacity: 0; transform: scale(.9); transition-duration: .3s; }
+.mq .pnote.mq-glow { animation: glow 1.8s ease-out; }   /* @keyframes glow có sẵn trong kiosk.css */
+
+.mq:empty::before {
+  content: 'No posts yet. Be the first to share a next step!';
+  display: block; background: rgba(255,255,255,.1); color: #fff;
+  font-size: 2rem; padding: 4rem 2rem; border-radius: 1.5rem;
+}
