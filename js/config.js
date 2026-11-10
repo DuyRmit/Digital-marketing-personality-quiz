@@ -170,7 +170,7 @@ const QUESTIONS = [
 
 
 const BOARD = {
-  endpoint: 'https://superpower-board.duy-doan6.workers.dev',
+  endpoint: "https://api.rmitdigitalmarketing.com",
   maxLen: 140,
   maxName: 20,
   pollMs: 30000, // students' phones
