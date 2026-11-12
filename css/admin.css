@@ -1,0 +1,26 @@
+/* #admin: static moderation grid. Reuses .board / .pnote from board.css */
+body.admin-mode .shell,
+body.admin-mode main,
+body.admin-mode #stage { max-width: 1280px; width: 100%; }
+.adm h2 { margin: 0 0 4px; }
+.adm .lead { margin: 0 0 14px; }
+.adm-tabs { display: flex; gap: 6px; margin-bottom: 14px; border-bottom: 2px solid var(--line); }
+.adm-tab { font: 700 15px Lato, sans-serif; color: var(--navy); background: none; border: 0; padding: 10px 14px; cursor: pointer; border-bottom: 4px solid transparent; margin-bottom: -2px; }
+.adm-tab.on { border-bottom-color: #E61E2A; }
+.adm-tools { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-bottom: 12px; }
+.adm-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.adm-chip { font: 700 13px Lato, sans-serif; color: var(--navy); background: #fff; border: 2px solid var(--c, var(--navy)); border-radius: 999px; padding: 6px 12px; cursor: pointer; }
+.adm-chip b { opacity: .7; margin-left: 4px; }
+.adm-chip.on { background: var(--c, var(--navy)); color: var(--ink, #fff); }
+.adm-tools input[type=search] { flex: 1 1 220px; min-width: 200px; font: 400 15px Lato, sans-serif; padding: 9px 12px; border: 2px solid var(--line); border-radius: 10px; }
+.adm-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 8px; }
+.adm .btn.sm { padding: 6px 12px; font-size: 13px; min-height: 0; }
+.adm .btn.danger { color: #b3121c; border-color: #b3121c; }
+.adm-fresh { position: sticky; top: 8px; z-index: 5; margin: 8px 0; }
+.adm-more { text-align: center; margin: 18px 0; }
+.adm-ses { display: flex; flex-wrap: wrap; gap: 10px; justify-content: space-between; align-items: center; padding: 14px 16px; margin-bottom: 10px; background: #fff; border: 2px solid var(--line); border-radius: 14px; }
+.adm-ses small { display: block; opacity: .75; margin-top: 2px; }
+.adm-ses-btns { display: flex; flex-wrap: wrap; gap: 6px; }
+.adm.ro .pnote .hide { display: none; }
+.adm .pnote.sample { outline: 3px dashed var(--navy); outline-offset: -2px; }
+.adm .pnote.sample::after { content: 'Sample'; position: absolute; top: 12px; right: 10px; font: 900 0.72rem Lato, sans-serif; background: #fff; color: var(--navy); padding: 3px 10px; border-radius: 99px; }
