@@ -39,6 +39,11 @@ let boardTimer = null,
 const seenIds = new Set();
 let kioskMq = null; /* băng chuyền card trên TV (marquee.js) */
 
+/* How many of the newest cards each screen asks the Worker for (the Worker caps this at 250).
+   TV: more cards to rotate. Students: lighter for phones; their own card is always pinned on top. */
+const BOARD_LIMIT_KIOSK = 250,
+  BOARD_LIMIT_STUDENT = 100;
+
 function esc(t) {
   return String(t).replace(
     /[&<>"']/g,
@@ -66,7 +71,13 @@ function nameProblem(n) {
 
 async function boardList() {
   if (!BOARD.endpoint) return demoPosts.slice();
-  const r = await fetch(BOARD.endpoint + '/posts', { cache: 'no-store' });
+  const kiosk = document.body.classList.contains('kiosk');
+  const q = kiosk
+    ? '?limit=' + BOARD_LIMIT_KIOSK
+    : '?limit=' +
+      BOARD_LIMIT_STUDENT +
+      (state.posted && state.posted.id ? '&mine=' + encodeURIComponent(state.posted.id) : '');
+  const r = await fetch(BOARD.endpoint + '/posts' + q, { cache: 'no-store' });
   if (!r.ok) throw new Error('list failed');
   return (await r.json()).posts || [];
 }
