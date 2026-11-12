@@ -19,6 +19,7 @@ function renderProgress() {
     return;
   }
   progress.hidden = false;
+  progress.setAttribute('role', 'group');
   progress.setAttribute('aria-label', `Question ${n + 1} of ${QUESTIONS.length}`);
   /* answered questions (and the current one) can be revisited by tapping their bar */
   progress.innerHTML = QUESTIONS.map((_, i) => {
@@ -26,7 +27,7 @@ function renderProgress() {
     const clickable = i !== n && state.answers[i] !== null;
     return clickable
       ? `<button type="button" class="${cls}" data-i="${i}" aria-label="Go back to question ${i + 1}"><i></i></button>`
-      : `<span class="${cls}" ${i === n ? 'aria-current="step"' : ''}><i></i></span>`;
+      : `<span class="${cls}" aria-hidden="true"><i></i></span>`;
   }).join('');
   progress.querySelectorAll('button').forEach((b) => {
     b.onclick = () => go(Number(b.dataset.i));
@@ -71,7 +72,7 @@ function renderWelcome() {
   <p class="lead">Discover your digital marketing strengths through six quick questions and reveal your persona.</p>
 </div>
 <div class="pwrap">
-<ul class="pgrid" tabindex="0" aria-label="The six digital marketing personas">
+<ul class="pgrid" role="list" tabindex="0" aria-label="The six digital marketing personas">
   ${Object.keys(PERSONAS)
     .map((k, n) => {
       const p = PERSONAS[k];
@@ -153,7 +154,7 @@ function renderQuestion(i) {
   stage.innerHTML = `
     <span class="kicker">Question ${i + 1} of ${QUESTIONS.length}</span>
     <h2 data-focus>${q.title}</h2>
-    <p class="scenario">${q.text}</p>
+    <p class="scenario" aria-hidden="true">${q.text}</p>
     <fieldset>
 <legend>${q.text}</legend>
 <div class="opts">
