@@ -108,9 +108,9 @@ function admDrawChips() {
   const src = admOpen ? admOpen.posts : admPosts, n = {};
   src.forEach((p) => { n[p.persona] = (n[p.persona] || 0) + 1; });
   $a('admChips').innerHTML =
-    `<button type="button" class="adm-chip${admPersona ? '' : ' on'}" data-p="">All <b>${src.length}</b></button>` +
+    `<button type="button" class="adm-chip${admPersona ? '' : ' on'}" data-p="" aria-pressed="${!admPersona}" aria-label="All personas, ${src.length} cards">All <b>${src.length}</b></button>` +
     Object.entries(PERSONAS).map(([k, p]) =>
-      `<button type="button" class="adm-chip${admPersona === k ? ' on' : ''}" data-p="${k}" style="--c:${p.color};--ink:${p.ink}">${p.name} <b>${n[k] || 0}</b></button>`).join('');
+      `<button type="button" class="adm-chip${admPersona === k ? ' on' : ''}" data-p="${k}" aria-pressed="${admPersona === k}" aria-label="${p.name}, ${n[k] || 0} cards" style="--c:${p.color};--ink:${p.ink}">${p.name} <b>${n[k] || 0}</b></button>`).join('');
 }
 function admDraw() {
   admPending = 0; $a('admFresh').hidden = true;
@@ -120,23 +120,24 @@ function admDraw() {
   $a('admBoard').innerHTML = shown.length
     ? shown.map((p, i) => {
         let h = noteHTML(p, Math.min(i, 10), false, true);
-        if (p.sample) h = h.replace('class="pnote', 'class="pnote sample');
+        if (p.sample) h = h.replace('class="pnote', 'class="pnote sample').replace('<header>', '<header><span class="sr-only">Sample card. </span>');
         return h;
       }).join('')
     : '<p class="empty">No cards match.</p>';
+  $a('admCountLive').textContent = `${list.length} card${list.length === 1 ? '' : 's'} shown`;
   const rest = list.length - shown.length;
   $a('admMore').innerHTML = rest > 0 ? `<button type="button" class="btn ghost" data-a="more">Show ${Math.min(rest, ADM_PAGE)} more (${rest} left)</button>` : '';
 }
 function admDrawSessions() {
   $a('admSessions').innerHTML = admSessions.length
     ? admSessions.map((s) => `<div class="adm-ses" data-id="${s.id}"><div><b>${esc(s.name)}</b><small>${admDate(s.saved_at)} · ${s.count} cards</small></div>
-        <div class="adm-ses-btns"><button type="button" class="btn sm" data-a="ses-view">View</button><button type="button" class="btn ghost sm" data-a="ses-csv">CSV</button><button type="button" class="btn ghost sm" data-a="ses-json">JSON</button><button type="button" class="btn ghost sm danger" data-a="ses-del">Delete</button></div></div>`).join('')
+        <div class="adm-ses-btns"><button type="button" class="btn sm" data-a="ses-view" aria-label="View ${esc(s.name)}">View</button><button type="button" class="btn ghost sm" data-a="ses-csv" aria-label="Download CSV of ${esc(s.name)}">CSV</button><button type="button" class="btn ghost sm" data-a="ses-json" aria-label="Download JSON of ${esc(s.name)}">JSON</button><button type="button" class="btn ghost sm danger" data-a="ses-del" aria-label="Delete ${esc(s.name)}">Delete</button></div></div>`).join('')
     : '<p class="empty">No saved sessions yet. Use “Save session” at the end of each round.</p>';
 }
 function admSetView(v, session) {
   admView = v; admOpen = session || null; admPersona = ''; admQuery = ''; admCount = ADM_PAGE;
   $a('admQ').value = '';
-  document.querySelectorAll('.adm-tab').forEach((t) => t.classList.toggle('on', t.dataset.view === v));
+  document.querySelectorAll('.adm-tab').forEach((t) => { t.classList.toggle('on', t.dataset.view === v); t.setAttribute('aria-pressed', String(t.dataset.view === v)); });
   const list = v === 'sessions' && !admOpen;
   $a('admTools').hidden = list; $a('admBoard').hidden = list; $a('admMore').hidden = list; $a('admSessions').hidden = !list;
   $a('admActions').innerHTML = admOpen
@@ -201,15 +202,16 @@ async function initAdmin() {
   <div class="adm" id="adm">
     <h2>Admin · Board moderation</h2>
     <p class="lead" id="admStat"></p>
-    <div class="adm-tabs">
-      <button type="button" class="adm-tab on" data-view="live">This session</button>
-      <button type="button" class="adm-tab" data-view="sessions">Saved sessions (<span id="admSesCount">0</span>)</button>
+    <div class="adm-tabs" role="group" aria-label="Admin views">
+      <button type="button" class="adm-tab on" data-view="live" aria-pressed="true">This session</button>
+      <button type="button" class="adm-tab" data-view="sessions" aria-pressed="false">Saved sessions (<span id="admSesCount">0</span>)</button>
     </div>
-    <div class="adm-tools" id="admTools"><div class="adm-chips" id="admChips"></div><input id="admQ" type="search" placeholder="Search text or nickname" aria-label="Search cards"></div>
+    <div class="adm-tools" id="admTools"><div class="adm-chips" id="admChips" role="group" aria-label="Filter by persona"></div><input id="admQ" type="search" placeholder="Search text or nickname" aria-label="Search cards"></div>
     <div class="adm-actions" id="admActions"></div>
     <p class="note" id="admMsg" role="status"></p>
-    <div class="adm-fresh" id="admFresh" hidden></div>
-    <div class="board" id="admBoard"></div>
+    <div class="adm-fresh" id="admFresh" hidden role="status"></div>
+    <div class="board" id="admBoard" role="region" aria-label="Cards"></div>
+    <p class="sr-only" id="admCountLive" role="status"></p>
     <div class="adm-more" id="admMore"></div>
     <div id="admSessions" hidden></div>
   </div>`;
