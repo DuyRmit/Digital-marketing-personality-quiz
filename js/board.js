@@ -130,8 +130,8 @@ function postBlockHTML() {
     <div class="actions"><button class="btn" id="seeboard">See the board →</button><button class="btn ghost" id="cont">Continue →</button></div>`;
   return `
     <label class="next-step" for="stepText">My next step is to…</label>
-    <textarea id="stepText" rows="3" maxlength="${BOARD.maxLen}" placeholder="Write one small, realistic action" autocomplete="off"></textarea>
-    <div class="count"><span id="cnt">0</span>/${BOARD.maxLen}</div>
+    <textarea id="stepText" aria-describedby="cntWrap postMsg" rows="3" maxlength="${BOARD.maxLen}" placeholder="Write one small, realistic action" autocomplete="off"></textarea>
+    <div class="count" id="cntWrap"><span id="cnt">0</span>/${BOARD.maxLen}</div>
     <label class="field-label" for="stepName">Name your card (optional)</label>
     <input id="stepName" type="text" maxlength="${BOARD.maxName}" placeholder="A nickname, e.g. Mai" autocomplete="off">
     <p class="note">Your card goes on a shared board that everyone at Experience Day can see. Please use a nickname instead of your full name, and leave out links and contact details. Prefer pen and paper? Write it on a card at the booth instead.</p>
@@ -195,7 +195,7 @@ function noteHTML(post, idx, isNew, first) {
     <header><span class="pn-ic">${iconHTML(post.persona)}</span><span class="pn-t"><b>${nm ? esc(nm) : p.name}</b>${nm ? `<small>${p.name}</small>` : ''}</span>${mine ? '<em>You</em>' : ''}</header>
     <p>${esc(post.text)}</p>
     <div class="pn-v"><span class="pn-vl">RMIT Value: </span>${p.value}</div>
-    ${boardIsAdmin ? `<button type="button" class="hide" data-id="${esc(post.id)}">Hide</button>` : ''}
+    ${boardIsAdmin ? `<button type="button" class="hide" data-id="${esc(post.id)}" aria-label="Hide ${esc(nm || p.name)}’s card: ${esc(String(post.text).slice(0, 60))}">Hide</button>` : ''}
   </article>`;
 }
 
@@ -284,7 +284,7 @@ function renderBoard() {
   stage.innerHTML = `
     ${head}
     ${BOARD.endpoint ? '' : '<p class="note demo">Demo mode: posts are only visible on this device until the board is connected.</p>'}
-    ${kiosk ? '<div class="mq" id="mqboard" aria-live="off"></div>' : '<div class="board" id="board" aria-live="polite"></div>'}
+    ${kiosk ? '<div class="mq" id="mqboard" aria-live="off"></div>' : '<div class="board" id="board"></div>'}
     ${kiosk ? '' : '<p class="note" id="boardMsg" role="status"></p>'}
     ${kiosk ? '' : `<div class="actions"><button class="btn ghost" id="bback">← Back</button>${from === 'result' ? '<button class="btn grow" id="bnext">Continue →</button>' : ''}</div>`}`;
   fitBoard(); /* TV: đặt chiều cao cho #mqboard */
