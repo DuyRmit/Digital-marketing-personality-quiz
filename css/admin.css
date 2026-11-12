@@ -24,3 +24,5 @@ body.admin-mode #stage { max-width: 1280px; width: 100%; }
 .adm.ro .pnote .hide { display: none; }
 .adm .pnote.sample { outline: 3px dashed var(--navy); outline-offset: -2px; }
 .adm .pnote.sample::after { content: 'Sample'; position: absolute; top: 12px; right: 10px; font: 900 0.72rem Lato, sans-serif; background: #fff; color: var(--navy); padding: 3px 10px; border-radius: 99px; }
+.sr-only { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+.adm button:focus-visible, .adm input:focus-visible { outline: 4px solid var(--gold); outline-offset: 2px; }
